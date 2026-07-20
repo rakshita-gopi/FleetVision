@@ -1,15 +1,18 @@
 from django.urls import path
 from .views import (
-    DashboardReportView, VehicleReportView, DriverReportView,
-    TripReportView, FuelReportView, MaintenanceReportView, ExpenseReportView,
+    DashboardReportView,
+    ReportChatView,
+    GenerateReportView,
+    ReportHistoryView,
+    ReportDownloadView,
+    ReportPreviewView,
 )
 
 urlpatterns = [
     path("dashboard", DashboardReportView.as_view()),
-    path("vehicles", VehicleReportView.as_view()),
-    path("drivers", DriverReportView.as_view()),
-    path("trips", TripReportView.as_view()),
-    path("fuel", FuelReportView.as_view()),
-    path("maintenance", MaintenanceReportView.as_view()),
-    path("expenses", ExpenseReportView.as_view()),
+    path("chat", ReportChatView.as_view()),
+    path("generate", GenerateReportView.as_view()),
+    path("history", ReportHistoryView.as_view()),
+    path("<uuid:report_id>/download", ReportDownloadView.as_view()),
+    path("<uuid:report_id>/preview", ReportPreviewView.as_view()),
 ]

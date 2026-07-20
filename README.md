@@ -33,14 +33,26 @@ psql postgres -c "CREATE DATABASE fleetvision OWNER fleetvision;"
 
 ### 2. Backend
 
+Your shell’s `python3` is often Homebrew (no Django). Use the system Python or install into a venv.
+
 ```bash
 cd backend
 cp .env.example .env   # already configured for local PostgreSQL + Ollama
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py seed_demo
-python manage.py runserver 8000
+
+# Option A — system Python (works on this Mac if packages were installed with /usr/bin/python3 -m pip)
+/usr/bin/python3 -m pip install -r requirements.txt
+/usr/bin/python3 manage.py migrate
+/usr/bin/python3 manage.py seed_demo
+/usr/bin/python3 manage.py runserver 8000
+
+# Option B — virtualenv (recommended for teammates)
+# /usr/bin/python3 -m venv .venv
+# source .venv/bin/activate
+# pip install -r requirements.txt
+# python manage.py migrate && python manage.py seed_demo && python manage.py runserver 8000
 ```
+
+API: **http://127.0.0.1:8000**
 
 ### 3. Ollama (AI)
 

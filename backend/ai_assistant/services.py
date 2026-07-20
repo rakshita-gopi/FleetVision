@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import socket
 import urllib.request
 import urllib.error
 from typing import Optional
@@ -23,7 +24,7 @@ def _strip_thinking(text: str) -> str:
     return cleaned or text.strip()
 
 
-def call_ollama(prompt: str, system_msg: str = SYSTEM_PROMPT) -> Optional[str]:
+def call_ollama(prompt: str, system_msg: str = SYSTEM_PROMPT, timeout: int = 120) -> Optional[str]:
     url = f"{OLLAMA_BASE_URL.rstrip('/')}/api/chat"
     payload = json.dumps({
         "model": OLLAMA_MODEL,
@@ -42,11 +43,11 @@ def call_ollama(prompt: str, system_msg: str = SYSTEM_PROMPT) -> Optional[str]:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             content = data.get("message", {}).get("content", "")
             return _strip_thinking(content)
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError):
+    except (urllib.error.URLError, TimeoutError, socket.timeout, json.JSONDecodeError, KeyError):
         return None
 
 
