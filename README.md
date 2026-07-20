@@ -8,7 +8,7 @@ AI-Powered Fleet Management System — a full-stack enterprise platform for mana
 |-------|-----------|
 | Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS |
 | Backend | Django 4.2, Django REST Framework |
-| Auth | JWT (SimpleJWT) |
+| Auth | JWT (SimpleJWT) + Google Sign-In |
 | Database | PostgreSQL 16 (local) |
 | AI | Ollama — Qwen3:8B |
 | Maps | Leaflet + OpenStreetMap |
@@ -55,11 +55,40 @@ Ensure `OLLAMA_BASE_URL=http://localhost:11434` and `OLLAMA_MODEL=qwen3:8b` in `
 
 ```bash
 cd frontend
+cp .env.local.example .env.local   # or create .env.local with API URL + Google Client ID
 npm install
 npm run dev
 ```
 
-Open **http://localhost:3000**
+`npm run dev` picks the first free port starting at **3000** (falls back to 3001, 3002, …). Backend CORS already allows any `http://localhost:<port>`.
+
+Open the URL printed in the terminal (usually **http://localhost:3000**).
+
+If you see “Another next dev server is already running”, stop the old one first:
+
+```bash
+kill $(lsof -tiTCP:3000 -sTCP:LISTEN) 2>/dev/null
+npm run dev
+```
+
+### 5. Google Sign-In (optional)
+
+1. Create an OAuth **Web** client in [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Add authorized JavaScript origins: `http://localhost:3000`
+3. Put the same Client ID in both env files:
+
+```bash
+# backend/.env
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+
+# frontend/.env.local
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+```
+
+4. Restart backend and frontend. The login page will show **Continue with Google**.
+
+Email/password login still works. First Google Sign-In creates a Fleet Manager account (or links to an existing user with the same email).
 
 ### Demo Credentials
 

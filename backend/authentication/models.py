@@ -31,6 +31,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     full_name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
+    google_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
     role = models.CharField(max_length=50, choices=UserRole.choices, default=UserRole.FLEET_MANAGER)
     phone = models.CharField(max_length=20, blank=True)
     is_active = models.BooleanField(default=True)

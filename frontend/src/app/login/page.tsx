@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { AnimatedBackground } from "@/components/ui/animated-background";
+import { GoogleSignInButton } from "@/components/providers";
 import api, { ApiResponse } from "@/lib/api";
 import { toast } from "sonner";
 
 function AuthForm() {
   const searchParams = useSearchParams();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
 
@@ -60,11 +61,22 @@ function AuthForm() {
     }
   };
 
+  const handleGoogle = async (credential: string) => {
+    setLoading(true);
+    try {
+      await loginWithGoogle(credential);
+      toast.success("Signed in with Google");
+    } catch {
+      toast.error("Google Sign-In failed. Check Client ID configuration.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="app-bg min-h-screen flex relative">
       <AnimatedBackground variant="auth" />
 
-      {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 border-r border-[var(--border)]">
         <motion.div
           initial={{ opacity: 0, x: -30 }}
@@ -106,7 +118,6 @@ function AuthForm() {
         </motion.div>
       </div>
 
-      {/* Right panel — form */}
       <div className="flex-1 flex items-center justify-center p-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -122,7 +133,6 @@ function AuthForm() {
               <h1 className="text-xl font-bold text-[var(--foreground)]">FleetVision AI</h1>
             </div>
 
-            {/* Tab switcher */}
             <div className="flex rounded-xl p-1 mb-8" style={{ background: "var(--muted-bg)" }}>
               {(["login", "signup"] as const).map((tab) => (
                 <button
@@ -165,7 +175,6 @@ function AuthForm() {
                       {!loading && <ArrowRight className="h-4 w-4" />}
                     </Button>
                   </form>
-                  <p className="text-center text-xs text-[var(--muted)] mt-5">Demo: admin@fleetvision.ai / admin123</p>
                 </motion.div>
               ) : (
                 <motion.div key="signup" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}>
@@ -209,7 +218,23 @@ function AuthForm() {
               )}
             </AnimatePresence>
 
-            <p className="text-center text-xs text-[var(--muted)] mt-6">
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-[var(--border)]" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-3 bg-[var(--card)] text-[var(--muted)]">or continue with</span>
+              </div>
+            </div>
+
+            <GoogleSignInButton
+              text={mode === "signup" ? "signup_with" : "continue_with"}
+              onSuccess={handleGoogle}
+              onError={() => toast.error("Google Sign-In was cancelled")}
+            />
+
+            <p className="text-center text-xs text-[var(--muted)] mt-5">Demo: admin@fleetvision.ai / admin123</p>
+            <p className="text-center text-xs text-[var(--muted)] mt-3">
               <Link href="/" className="hover:text-[var(--primary)] transition-colors">← Back to home</Link>
             </p>
           </div>

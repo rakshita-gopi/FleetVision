@@ -55,10 +55,17 @@ class DriverViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        user = instance.user
+        if "full_name" in request.data or "name" in request.data:
+            user.full_name = request.data.get("full_name") or request.data.get("name") or user.full_name
+        if "phone" in request.data:
+            user.phone = request.data.get("phone") or ""
+        user.save()
+        data = request.data.copy() if hasattr(request.data, "copy") else dict(request.data)
+        serializer = self.get_serializer(instance, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return api_response(True, "Driver updated", serializer.data)
+            return api_response(True, "Driver updated", DriverSerializer(instance).data)
         return api_response(False, "Update failed", errors=serializer.errors, status_code=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):

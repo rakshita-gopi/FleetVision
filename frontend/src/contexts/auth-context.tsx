@@ -9,11 +9,18 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function persistSession(access_token: string, refresh_token: string, userData: User) {
+  localStorage.setItem("access_token", access_token);
+  localStorage.setItem("refresh_token", refresh_token);
+  localStorage.setItem("user", JSON.stringify(userData));
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -43,9 +50,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       { email, password }
     );
     const { access_token, refresh_token, user: userData } = res.data.data!;
-    localStorage.setItem("access_token", access_token);
-    localStorage.setItem("refresh_token", refresh_token);
-    localStorage.setItem("user", JSON.stringify(userData));
+    persistSession(access_token, refresh_token, userData);
+    setUser(userData);
+    router.push("/dashboard");
+  };
+
+  const loginWithGoogle = async (credential: string) => {
+    const res = await api.post<ApiResponse<{ access_token: string; refresh_token: string; user: User }>>(
+      "/auth/google",
+      { credential }
+    );
+    const { access_token, refresh_token, user: userData } = res.data.data!;
+    persistSession(access_token, refresh_token, userData);
     setUser(userData);
     router.push("/dashboard");
   };
@@ -59,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

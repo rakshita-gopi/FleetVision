@@ -35,6 +35,10 @@ class TripViewSet(viewsets.ModelViewSet):
             return api_response(True, "Trip created", serializer.data, status_code=status.HTTP_201_CREATED)
         return api_response(False, "Validation failed", errors=serializer.errors, status_code=status.HTTP_400_BAD_REQUEST)
 
+    def destroy(self, request, *args, **kwargs):
+        self.get_object().delete()
+        return api_response(True, "Trip deleted")
+
     @action(detail=True, methods=["put"])
     def start(self, request, pk=None):
         trip = self.get_object()

@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@layer base {
+  body {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
 :root,
 .light {
   --background: #ffffff;
@@ -76,8 +82,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 * {
@@ -127,9 +133,21 @@ body {
 }
 
 .leaflet-container {
-  background: var(--card) !important;
+  background: #e5e7eb !important;
   border-radius: 12px;
   font-family: inherit;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.leaflet-container .leaflet-tile-pane img {
+  filter: none !important;
+}
+
+.fleet-marker {
+  background: transparent !important;
+  border: none !important;
 }
 
 @keyframes float {
