@@ -20,15 +20,17 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-              set -e
+            set -e
 
-              cd ~/FleetVision
+            cd ~/FleetVision
 
-              git fetch origin
-              git reset --hard origin/main
+            git fetch origin
+            git reset --hard origin/main
 
-              sudo docker compose up -d --build backend
+            sudo docker compose up -d --build backend
 
-              sudo docker image prune -f
+            curl -f http://localhost:8000/api/docs/ >/dev/null
 
-              echo "✅ Deployment completed successfully"
+            sudo docker image prune -f
+
+            echo "✅ Deployment completed successfully"
