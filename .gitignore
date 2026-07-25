@@ -29,8 +29,11 @@ npm-debug.log*
 .vscode/
 *.swp
 
-# Docker volumes
+# Docker volumes / local env
 pgdata/
+backend/.env.docker.local
+frontend/.env.local
+
 
 # Cursor / agent
 .cursor/

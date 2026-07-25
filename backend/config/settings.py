@@ -104,13 +104,15 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
-# Allow Next.js on any local port (3000, 3001, …) without reconfiguring CORS each time
+# Localhost any port + raw IPs (EC2 public/private IP:3000) without reconfiguring each time
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://localhost:\d+$",
     r"^http://127\.0\.0\.1:\d+$",
+    r"^http://\d{1,3}(\.\d{1,3}){3}(:\d+)?$",
 ]
 CORS_ALLOW_CREDENTIALS = True
 

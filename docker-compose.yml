@@ -1,42 +1,57 @@
-version: "3.9"
+# FleetVision — Backend stack only (API + PostgreSQL)
+# Frontend runs separately with: cd frontend && npm run dev
 
 services:
   db:
     image: postgres:16-alpine
+    container_name: fleetvision-db
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: fleetvision
-      POSTGRES_USER: fleetvision
-      POSTGRES_PASSWORD: fleetvision
+      POSTGRES_DB: ${POSTGRES_DB:-fleetvision}
+      POSTGRES_USER: ${POSTGRES_USER:-fleetvision}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fleetvision}
     ports:
-      - "5432:5432"
+      # Expose only if you need host tools (psql/GUI) to reach the DB
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - fleetvision_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fleetvision} -d ${POSTGRES_DB:-fleetvision}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fleetvision-api
+    restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
+    env_file:
+      - ./backend/.env.docker
     environment:
-      DATABASE_URL: postgres://fleetvision:fleetvision@db:5432/fleetvision
-      SECRET_KEY: docker-dev-secret-key
-      DEBUG: "True"
-      CORS_ALLOWED_ORIGINS: http://localhost:3000
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Override host DB URL so the container talks to the compose service "db"
+      DATABASE_URL: postgres://${POSTGRES_USER:-fleetvision}:${POSTGRES_PASSWORD:-fleetvision}@db:5432/${POSTGRES_DB:-fleetvision}
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      # Reach Ollama running on your Mac/host from inside Docker
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
-      - db
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py seed_demo &&
-             python manage.py runserver 0.0.0.0:8000"
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000/api
-    depends_on:
-      - backend
+      db:
+        condition: service_healthy
+    volumes:
+      # Live-reload code during local Docker development (optional)
+      - ./backend:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/docs/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
 volumes:
-  pgdata:
+  fleetvision_pgdata:
