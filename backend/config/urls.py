@@ -48,6 +48,8 @@ _api_patterns = [
     path("rentals/", include("rentals.urls")),
     path("agentic/", include("agentic.urls")),
     path("qr-desk/", include("qr_desk.urls")),
+    path("usage/", include("usage_logging.urls")),
+    path("demand/", include("demand.urls")),
 ]
 
 urlpatterns = [

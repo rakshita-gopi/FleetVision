@@ -59,7 +59,12 @@ fi
 if [ "${SEED_RENTAL:-true}" = "true" ]; then
   echo "Seeding Rental-IQ dataset (safe if already seeded)..."
   python manage.py seed_rental_dataset --telemetry-limit "${TELEMETRY_SEED_LIMIT:-500}" || true
+  echo "Seeding site demand for forecasting..."
+  python manage.py seed_site_demand || true
 fi
+
+echo "Scanning rental due / overdue alerts..."
+python manage.py scan_rental_alerts || true
 
 echo "Collecting static files..."
 python manage.py collectstatic --noinput || true

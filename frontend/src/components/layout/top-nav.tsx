@@ -18,6 +18,22 @@ export function TopNav({ title, subtitle }: { title: string; subtitle?: string }
     api.get<ApiResponse<Notification[]>>("/notifications/").then((res) => {
       setNotifications(res.data.data || []);
     }).catch(() => {});
+    const id = window.setInterval(() => {
+      api.get<ApiResponse<Notification[]>>("/notifications/?unread=1").then((res) => {
+        // merge unread into list for badge freshness
+        const unread = res.data.data || [];
+        if (unread.length) {
+          setNotifications((prev) => {
+            const map = new Map(prev.map((n) => [n.id, n]));
+            unread.forEach((n) => map.set(n.id, n));
+            return Array.from(map.values()).sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+          });
+        }
+      }).catch(() => {});
+    }, 90_000);
+    return () => window.clearInterval(id);
   }, []);
 
   const unread = notifications.filter((n) => !n.is_read).length;
