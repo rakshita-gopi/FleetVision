@@ -30,15 +30,26 @@ export default function DashboardPage() {
   const tooltipBorder = theme === "dark" ? "#1e293b" : "#e2e8f0";
 
   useEffect(() => {
-    Promise.all([
-      api.get<ApiResponse<DashboardStats>>("/reports/dashboard"),
-      api.get<ApiResponse<{ summary: string }>>("/ai/dashboard-summary"),
-    ]).then(([statsRes, aiRes]) => {
-      setStats(statsRes.data.data || null);
-      setAiSummary(aiRes.data.data?.summary || "");
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+    // Phase 1: dashboard metrics must work without AI / Ollama
+    api
+      .get<ApiResponse<DashboardStats>>("/reports/dashboard")
+      .then((statsRes) => {
+        setStats(statsRes.data.data || null);
+      })
+      .catch(() => {
+        setStats(null);
+      })
+      .finally(() => setLoading(false));
 
+    api
+      .get<ApiResponse<{ summary: string }>>("/ai/dashboard-summary")
+      .then((aiRes) => {
+        setAiSummary(aiRes.data.data?.summary || "");
+      })
+      .catch(() => {
+        setAiSummary("");
+      });
+  }, []);
   const pieData = stats?.vehicle_status_distribution?.map((s) => ({
     name: s.status,
     value: s.count,
@@ -122,7 +133,7 @@ export default function DashboardPage() {
                 <CardDescription>Powered by Ollama Qwen3:8B</CardDescription>
               </CardHeader>
               <div className="text-sm text-[var(--muted)] leading-relaxed whitespace-pre-line">
-                {aiSummary || "Loading AI summary..."}
+                {aiSummary || "AI summary unavailable — fleet metrics above still work without Ollama."}
               </div>
             </Card>
           </motion.div>

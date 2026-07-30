@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, Truck, Users, Route, MapPin, Fuel,
-  Wrench, Wallet, BarChart3, Bot, Settings, LogOut, ChevronLeft, ChevronRight,
+  Wrench, Wallet, BarChart3, Bot, Settings, Activity, LogOut, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
@@ -22,6 +22,7 @@ const navItems = [
   { href: "/expenses", label: "Expenses", icon: Wallet },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/ai", label: "AI Assistant", icon: Bot },
+  { href: "/system", label: "System", icon: Activity },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

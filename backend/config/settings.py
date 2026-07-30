@@ -12,6 +12,7 @@ DEBUG = os.getenv("DEBUG", "True") == "True"
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -22,6 +23,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "corsheaders",
     "drf_spectacular",
+    "channels",
     "authentication",
     "vehicles",
     "drivers",
@@ -33,6 +35,8 @@ INSTALLED_APPS = [
     "reports",
     "notifications",
     "ai_assistant",
+    "system",
+    "telemetry",
 ]
 
 MIDDLEWARE = [
@@ -65,6 +69,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
     "default": {
@@ -124,6 +129,8 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "common.pagination.StandardResultsSetPagination",
+    "PAGE_SIZE": 25,
 }
 
 SIMPLE_JWT = {
@@ -136,6 +143,65 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "FleetVision AI API",
     "DESCRIPTION": "AI-Powered Fleet Management System",
     "VERSION": "1.0.0",
+}
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "IGNORE_EXCEPTIONS": True,
+        },
+        "KEY_PREFIX": "fleetvision",
+    }
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            # Use Redis DB 2 so cache KEY_PREFIX on DB 1 does not collide
+            "hosts": [os.getenv("REDIS_CHANNEL_URL", REDIS_URL.rsplit("/", 1)[0] + "/2")],
+        },
+    }
+}
+
+KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+KAFKA_TELEMETRY_TOPIC = os.getenv("KAFKA_TELEMETRY_TOPIC", "fleet.telemetry")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} {levelname} {name} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django.request": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "authentication": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "vehicles": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "drivers": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "trips": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "fuel": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "maintenance": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "expenses": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "system": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "telemetry": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
 }
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

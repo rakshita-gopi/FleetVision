@@ -1,12 +1,12 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q
 
 from common.response import api_response
 from common.permissions import IsFleetManagerOrAdmin
 from .models import Vehicle
 from .serializers import VehicleSerializer
+from .services import VehicleService
 
 
 class VehicleViewSet(viewsets.ModelViewSet):
@@ -20,7 +20,7 @@ class VehicleViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+        queryset = VehicleService.list_vehicles(self.filter_queryset(self.get_queryset()))
         serializer = self.get_serializer(queryset, many=True)
         return api_response(True, "Vehicles retrieved", serializer.data)
 
@@ -31,7 +31,7 @@ class VehicleViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            VehicleService.create_vehicle(serializer)
             return api_response(True, "Vehicle Created Successfully", serializer.data, status_code=status.HTTP_201_CREATED)
         return api_response(False, "Validation failed", errors=serializer.errors, status_code=status.HTTP_400_BAD_REQUEST)
 
@@ -39,18 +39,16 @@ class VehicleViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get("partial", False))
         if serializer.is_valid():
-            serializer.save()
+            VehicleService.update_vehicle(instance, serializer)
             return api_response(True, "Vehicle updated", serializer.data)
         return api_response(False, "Update failed", errors=serializer.errors, status_code=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
-        self.get_object().delete()
+        VehicleService.delete_vehicle(self.get_object())
         return api_response(True, "Vehicle deleted")
 
     @action(detail=False, methods=["get"])
     def search(self, request):
         q = request.query_params.get("vehicle_number", "")
-        queryset = self.get_queryset().filter(
-            Q(vehicle_number__icontains=q) | Q(registration_number__icontains=q)
-        )
+        queryset = VehicleService.search(q, self.get_queryset())
         return api_response(True, "Search results", self.get_serializer(queryset, many=True).data)

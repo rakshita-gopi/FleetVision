@@ -8,4 +8,6 @@ urlpatterns = [
     path("logout", LogoutView.as_view()),
     path("refresh", RefreshTokenView.as_view()),
     path("profile", ProfileView.as_view()),
+    path("me/", ProfileView.as_view()),  # Phase 1 alias for /profile
+    path("me", ProfileView.as_view()),
 ]

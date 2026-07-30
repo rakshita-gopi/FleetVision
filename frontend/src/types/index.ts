@@ -120,6 +120,38 @@ export interface VehicleLocation {
   current_trip_destination?: string;
 }
 
+/** Phase 2 Redis-backed live telemetry state */
+export interface LiveVehicleState {
+  vehicle_id: string;
+  latitude: number;
+  longitude: number;
+  speed?: number;
+  heading?: number;
+  fuel_level?: number;
+  rpm?: number;
+  engine_temperature?: number;
+  battery_voltage?: number;
+  odometer?: number;
+  gps_accuracy?: number;
+  source?: string;
+  last_updated: string;
+  vehicle_number?: string;
+}
+
+export interface TelemetryPoint {
+  time: string;
+  event_id: string;
+  vehicle_id: string;
+  latitude?: number;
+  longitude?: number;
+  speed?: number;
+  fuel_level?: number;
+  engine_temperature?: number;
+  rpm?: number;
+  battery_voltage?: number;
+  source?: string;
+}
+
 export interface DashboardStats {
   total_vehicles: number;
   active_vehicles: number;

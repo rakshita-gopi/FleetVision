@@ -1,6 +1,20 @@
 from rest_framework.permissions import BasePermission
 from authentication.models import UserRole
 
+# Role hierarchy (higher index = more privilege for "or above" checks)
+ROLE_RANK = {
+    UserRole.DRIVER: 1,
+    UserRole.MECHANIC: 2,
+    UserRole.FLEET_MANAGER: 3,
+    UserRole.ADMINISTRATOR: 4,
+}
+
+
+def _rank(user) -> int:
+    if not user or not user.is_authenticated:
+        return 0
+    return ROLE_RANK.get(user.role, 0)
+
 
 class IsAdministrator(BasePermission):
     def has_permission(self, request, view):
@@ -25,5 +39,7 @@ class IsMechanicOrAdmin(BasePermission):
 
 
 class IsDriverOrAbove(BasePermission):
+    """Any authenticated user whose role is Driver or higher in the fleet hierarchy."""
+
     def has_permission(self, request, view):
-        return request.user.is_authenticated
+        return _rank(request.user) >= ROLE_RANK[UserRole.DRIVER]

@@ -41,7 +41,7 @@ From the **repo root** (`FleetVision/`):
 # First time / after dependency changes
 docker compose build
 
-# Start PostgreSQL + Django API
+# Start PostgreSQL + Redis + Django API
 docker compose up -d
 
 # Follow logs
@@ -53,12 +53,14 @@ What this starts:
 | Service | URL / port |
 |---------|------------|
 | API | http://localhost:8000 |
+| Health | http://localhost:8000/api/v1/system/health/ |
 | API docs | http://localhost:8000/api/docs/ |
 | PostgreSQL | localhost:5432 (user/db/password: `fleetvision`) |
+| Redis | localhost:6379 |
 
 On first start the container will:
 
-1. Wait for Postgres  
+1. Wait for Postgres + Redis  
 2. Run migrations  
 3. Seed demo data  
 4. Serve the API on port **8000**
@@ -104,12 +106,15 @@ Compose loads `backend/.env.docker`. Important keys:
 SECRET_KEY=...
 DEBUG=True
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+REDIS_URL=redis://redis:6379/1
 OLLAMA_BASE_URL=http://host.docker.internal:11434
 OLLAMA_MODEL=qwen3:8b
 GOOGLE_CLIENT_ID=
 ```
 
-`DATABASE_URL` is overridden by Compose to point at the `db` service.
+`DATABASE_URL` and `REDIS_URL` are set by Compose to the `db` / `redis` services.
+
+Phase 1 notes: see [docs/phase-1-foundation.md](docs/phase-1-foundation.md) and [docs/roadmap-phases-2-8.md](docs/roadmap-phases-2-8.md).
 
 ---
 
@@ -123,7 +128,7 @@ cp .env.local.example .env.local   # if you don't have one yet
 Ensure `frontend/.env.local` points at the Docker API:
 
 ```
-NEXT_PUBLIC_API_URL=http://localhost:8000/api
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=
 ```
 

@@ -1,6 +1,27 @@
 #!/bin/sh
 set -e
 
+# Telemetry consumer skips web bootstrap when ROLE=consumer
+if [ "${ROLE:-web}" = "consumer" ]; then
+  echo "Waiting for PostgreSQL at ${DATABASE_HOST:-db}:${DATABASE_PORT:-5432}..."
+  python <<'PY'
+import os, socket, time
+host = os.getenv("DATABASE_HOST", "db")
+port = int(os.getenv("DATABASE_PORT", "5432"))
+for i in range(60):
+    try:
+        with socket.create_connection((host, port), timeout=2):
+            print("PostgreSQL is ready.")
+            break
+    except OSError:
+        time.sleep(1)
+else:
+    raise SystemExit("PostgreSQL did not become ready in time")
+PY
+  echo "Starting telemetry consumer..."
+  exec python manage.py telemetry_consumer
+fi
+
 echo "Waiting for PostgreSQL at ${DATABASE_HOST:-db}:${DATABASE_PORT:-5432}..."
 
 python <<'PY'
@@ -19,7 +40,6 @@ else:
 PY
 
 echo "Running migrations..."
-# Retry briefly — Postgres can accept TCP before it is fully ready for auth.
 i=0
 until python manage.py migrate --noinput; do
   i=$((i + 1))
@@ -39,9 +59,5 @@ fi
 echo "Collecting static files..."
 python manage.py collectstatic --noinput || true
 
-echo "Starting FleetVision API on 0.0.0.0:8000..."
-if [ "${DJANGO_DEBUG:-True}" = "True" ] || [ "${DEBUG:-True}" = "True" ]; then
-  exec python manage.py runserver 0.0.0.0:8000
-else
-  exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
-fi
+echo "Starting FleetVision API (ASGI/Daphne) on 0.0.0.0:8000..."
+exec daphne -b 0.0.0.0 -p 8000 config.asgi:application
