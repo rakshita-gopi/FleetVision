@@ -4,24 +4,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  LayoutDashboard, Truck, Users, Route, MapPin, Fuel,
-  Wrench, Wallet, BarChart3, Bot, Settings, Activity, LogOut, ChevronLeft, ChevronRight,
+  LayoutDashboard, HardHat, Package, MapPin, ClipboardList,
+  Bot, Bell, Activity, Settings, LogOut, ChevronLeft, ChevronRight, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
+import ShinyText from "@/components/react-bits/ShinyText";
+import Magnet from "@/components/react-bits/Magnet";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/vehicles", label: "Vehicles", icon: Truck },
-  { href: "/drivers", label: "Drivers", icon: Users },
-  { href: "/trips", label: "Trips", icon: Route },
-  { href: "/tracking", label: "Live Tracking", icon: MapPin },
-  { href: "/fuel", label: "Fuel", icon: Fuel },
-  { href: "/maintenance", label: "Maintenance", icon: Wrench },
-  { href: "/expenses", label: "Expenses", icon: Wallet },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
-  { href: "/ai", label: "AI Assistant", icon: Bot },
+  { href: "/equipment", label: "Equipment", icon: HardHat },
+  { href: "/rentals", label: "Rentals", icon: ClipboardList },
+  { href: "/sites", label: "Sites", icon: MapPin },
+  { href: "/operators", label: "Operators", icon: Package },
+  { href: "/tracking", label: "Live Map", icon: MapPin },
+  { href: "/agentic", label: "Agentic Mode", icon: Sparkles },
   { href: "/system", label: "System", icon: Activity },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
@@ -39,13 +38,18 @@ export function Sidebar() {
       )}
     >
       <div className="flex items-center gap-3 px-5 py-6 border-b border-[var(--border)]">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0" style={{ background: "var(--primary-soft)", color: "var(--primary)" }}>
-          <Truck className="h-5 w-5" />
-        </div>
+        <Magnet>
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0"
+            style={{ background: "var(--primary-soft)", color: "var(--primary)" }}
+          >
+            <HardHat className="h-5 w-5" />
+          </div>
+        </Magnet>
         {!collapsed && (
           <div>
-            <h1 className="text-base font-bold text-[var(--foreground)] tracking-tight">FleetVision</h1>
-            <p className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-medium">AI Platform</p>
+            <h1 className="text-base font-bold text-[var(--foreground)] tracking-tight">Rental-IQ</h1>
+            <ShinyText text="Equipment AI" className="text-[10px] uppercase tracking-widest font-medium" speed={4} />
           </div>
         )}
       </div>
@@ -61,7 +65,7 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
                   active
-                    ? "text-white shadow-sm"
+                    ? "text-[#1c1917] shadow-sm"
                     : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--hover)]"
                 )}
                 style={active ? { background: "var(--primary)" } : undefined}
@@ -85,7 +89,6 @@ export function Sidebar() {
         <button
           onClick={logout}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--muted)] hover:bg-[var(--danger-soft)] transition-all"
-          style={{ ["--hover-color" as string]: "var(--danger)" }}
           onMouseEnter={(e) => (e.currentTarget.style.color = "var(--danger)")}
           onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
         >

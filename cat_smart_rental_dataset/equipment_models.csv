@@ -1,0 +1,11 @@
+model_id,manufacturer,model,category,gross_power_kw,operating_weight_kg,grounding
+MOD001,Caterpillar,320,Excavator,,,CAT public product/rental taxonomy
+MOD002,Caterpillar,320 GC,Excavator,,,CAT public product/rental taxonomy
+MOD003,Caterpillar,262D3,Skid Steer Loader,55.4,3763.0,CAT product page
+MOD004,Caterpillar,950,Wheel Loader,,,CAT public product taxonomy
+MOD005,Caterpillar,D6,Dozer,,,CAT public product taxonomy
+MOD006,Caterpillar,120,Motor Grader,,,CAT public product taxonomy
+MOD007,Caterpillar,725,Articulated Truck,,,CAT public product taxonomy
+MOD008,Caterpillar,TH255C,Telehandler,,,CAT public product taxonomy
+MOD009,Caterpillar,CB13,Compactor,,,CAT public product taxonomy
+MOD010,Caterpillar,420,Backhoe Loader,,,CAT public product taxonomy

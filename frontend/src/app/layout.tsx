@@ -3,8 +3,9 @@ import { Providers } from "@/components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FleetVision AI — Intelligent Fleet Management",
-  description: "AI-powered fleet management system with live GPS tracking, analytics, and intelligent insights.",
+  title: "Rental-IQ — Smart Rental Equipment Intelligence",
+  description:
+    "AI-powered rental equipment platform with live tracking, check-in/out, utilisation insights, and Agentic Mode automation.",
 };
 
 export default function RootLayout({
@@ -13,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="h-full antialiased dark">
+    <html lang="en" suppressHydrationWarning className="h-full antialiased light">
       <body className="min-h-full font-sans">
         <Providers>{children}</Providers>
       </body>

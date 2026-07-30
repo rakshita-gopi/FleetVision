@@ -39,3 +39,4 @@ frontend/.env.local
 .cursor/
 agent-tools/
 agent-transcripts/
+backend/cat_smart_rental_dataset/

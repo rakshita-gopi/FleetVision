@@ -84,4 +84,16 @@ class FleetLiveView(APIView):
 
     def get(self, request):
         states = get_all_live_states()
+        # Enrich with Rental-IQ asset codes when state UUID matches equipment
+        from equipment.models import Equipment
+
+        ids = [s.get("vehicle_id") for s in states if s.get("vehicle_id")]
+        asset_map = {
+            str(e.id): e.asset_id for e in Equipment.objects.filter(id__in=ids).only("id", "asset_id")
+        }
+        for s in states:
+            vid = str(s.get("vehicle_id") or "")
+            if vid in asset_map:
+                s["asset_id"] = asset_map[vid]
+                s["equipment_id"] = vid
         return api_response(True, "Fleet live state", states)

@@ -123,6 +123,8 @@ export interface VehicleLocation {
 /** Phase 2 Redis-backed live telemetry state */
 export interface LiveVehicleState {
   vehicle_id: string;
+  equipment_id?: string;
+  asset_id?: string;
   latitude: number;
   longitude: number;
   speed?: number;
@@ -164,3 +166,96 @@ export interface DashboardStats {
   unread_notifications: number;
   vehicle_status_distribution: { status: string; count: number }[];
 }
+
+export interface Equipment {
+  id: string;
+  asset_id: string;
+  serial_number?: string;
+  manufacture_year?: number;
+  acquisition_type?: string;
+  current_status: string;
+  total_engine_hours: number;
+  model_name?: string;
+  category?: string;
+  manufacturer?: string;
+  site_id?: string | null;
+  site_name?: string | null;
+  operator_id?: string | null;
+  operator_name?: string | null;
+  live?: LiveVehicleState | null;
+}
+
+export interface Site {
+  id: string;
+  site_id: string;
+  site_name: string;
+  site_type?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  status: string;
+}
+
+export interface Operator {
+  id: string;
+  operator_id: string;
+  name: string;
+  certification?: string;
+  experience_years: number;
+  shift?: string;
+  status: string;
+}
+
+export interface Rental {
+  id: string;
+  rental_id: string;
+  equipment: string;
+  asset_id?: string;
+  equipment_category?: string;
+  site?: string | null;
+  site_id?: string | null;
+  site_name?: string | null;
+  operator?: string | null;
+  operator_id?: string | null;
+  operator_name?: string | null;
+  check_out_date?: string | null;
+  expected_return_date?: string | null;
+  actual_return_date?: string | null;
+  rental_days: number;
+  daily_rate: number;
+  rental_status: string;
+}
+
+export interface RentalDashboard {
+  total: number;
+  available: number;
+  active: number;
+  idle: number;
+  maintenance: number;
+  overdue_rentals: number;
+  underutilised: number;
+  active_rentals: number;
+  utilisation_pct?: number;
+  live_assets?: number;
+  returns?: {
+    id: string;
+    rental_id: string;
+    asset_id: string;
+    site_id?: string | null;
+    expected_return_date?: string | null;
+    days_until?: number | null;
+    overdue?: boolean;
+  }[];
+}
+
+export interface ActionProposal {
+  id: string;
+  action_type: string;
+  asset_id?: string | null;
+  rental_id?: string | null;
+  rationale: string;
+  payload?: Record<string, unknown>;
+  status: string;
+  created_at: string;
+  execution_result?: string;
+}
+

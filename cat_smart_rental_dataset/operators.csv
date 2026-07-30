@@ -1,0 +1,61 @@
+operator_id,name,certification,experience_years,shift,status
+OP001,Demo Operator 001,Dozer,12,DAY,ACTIVE
+OP002,Demo Operator 002,Dozer,13,NIGHT,ACTIVE
+OP003,Demo Operator 003,Dozer,14,DAY,ACTIVE
+OP004,Demo Operator 004,Motor Grader,8,NIGHT,ACTIVE
+OP005,Demo Operator 005,Articulated Truck,6,DAY,ACTIVE
+OP006,Demo Operator 006,Skid Steer Loader,10,DAY,ACTIVE
+OP007,Demo Operator 007,Dozer,3,NIGHT,ACTIVE
+OP008,Demo Operator 008,Motor Grader,15,DAY,ACTIVE
+OP009,Demo Operator 009,Excavator,4,DAY,ACTIVE
+OP010,Demo Operator 010,Telehandler,5,DAY,ACTIVE
+OP011,Demo Operator 011,Articulated Truck,4,NIGHT,ACTIVE
+OP012,Demo Operator 012,Compactor,3,NIGHT,ACTIVE
+OP013,Demo Operator 013,Dozer,12,NIGHT,LEAVE
+OP014,Demo Operator 014,Telehandler,15,NIGHT,ACTIVE
+OP015,Demo Operator 015,Dozer,3,NIGHT,ACTIVE
+OP016,Demo Operator 016,Excavator,14,DAY,ACTIVE
+OP017,Demo Operator 017,Wheel Loader,13,NIGHT,LEAVE
+OP018,Demo Operator 018,Skid Steer Loader,7,NIGHT,LEAVE
+OP019,Demo Operator 019,Compactor,9,NIGHT,ACTIVE
+OP020,Demo Operator 020,Excavator,11,DAY,ACTIVE
+OP021,Demo Operator 021,Motor Grader,13,NIGHT,ACTIVE
+OP022,Demo Operator 022,Motor Grader,7,DAY,ACTIVE
+OP023,Demo Operator 023,Excavator,12,NIGHT,ACTIVE
+OP024,Demo Operator 024,Wheel Loader,9,DAY,ACTIVE
+OP025,Demo Operator 025,Backhoe Loader,10,DAY,ACTIVE
+OP026,Demo Operator 026,Articulated Truck,13,DAY,ACTIVE
+OP027,Demo Operator 027,Backhoe Loader,15,DAY,LEAVE
+OP028,Demo Operator 028,Articulated Truck,8,DAY,ACTIVE
+OP029,Demo Operator 029,Articulated Truck,15,NIGHT,ACTIVE
+OP030,Demo Operator 030,Excavator,4,DAY,ACTIVE
+OP031,Demo Operator 031,Compactor,14,DAY,ACTIVE
+OP032,Demo Operator 032,Wheel Loader,3,NIGHT,ACTIVE
+OP033,Demo Operator 033,Wheel Loader,5,NIGHT,ACTIVE
+OP034,Demo Operator 034,Backhoe Loader,13,DAY,ACTIVE
+OP035,Demo Operator 035,Telehandler,11,NIGHT,ACTIVE
+OP036,Demo Operator 036,Backhoe Loader,8,DAY,ACTIVE
+OP037,Demo Operator 037,Dozer,2,NIGHT,ACTIVE
+OP038,Demo Operator 038,Backhoe Loader,4,DAY,ACTIVE
+OP039,Demo Operator 039,Skid Steer Loader,12,DAY,ACTIVE
+OP040,Demo Operator 040,Skid Steer Loader,15,DAY,ACTIVE
+OP041,Demo Operator 041,Skid Steer Loader,9,DAY,ACTIVE
+OP042,Demo Operator 042,Compactor,4,DAY,LEAVE
+OP043,Demo Operator 043,Compactor,4,NIGHT,ACTIVE
+OP044,Demo Operator 044,Dozer,2,DAY,ACTIVE
+OP045,Demo Operator 045,Articulated Truck,7,NIGHT,ACTIVE
+OP046,Demo Operator 046,Excavator,11,DAY,ACTIVE
+OP047,Demo Operator 047,Telehandler,12,NIGHT,ACTIVE
+OP048,Demo Operator 048,Dozer,4,DAY,ACTIVE
+OP049,Demo Operator 049,Compactor,3,NIGHT,ACTIVE
+OP050,Demo Operator 050,Motor Grader,8,DAY,ACTIVE
+OP051,Demo Operator 051,Compactor,13,DAY,ACTIVE
+OP052,Demo Operator 052,Backhoe Loader,14,DAY,ACTIVE
+OP053,Demo Operator 053,Dozer,3,NIGHT,ACTIVE
+OP054,Demo Operator 054,Compactor,4,NIGHT,ACTIVE
+OP055,Demo Operator 055,Wheel Loader,7,DAY,ACTIVE
+OP056,Demo Operator 056,Motor Grader,15,NIGHT,ACTIVE
+OP057,Demo Operator 057,Telehandler,12,NIGHT,ACTIVE
+OP058,Demo Operator 058,Dozer,5,DAY,ACTIVE
+OP059,Demo Operator 059,Backhoe Loader,1,NIGHT,ACTIVE
+OP060,Demo Operator 060,Excavator,10,NIGHT,ACTIVE

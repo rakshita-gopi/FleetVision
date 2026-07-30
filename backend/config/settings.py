@@ -37,6 +37,11 @@ INSTALLED_APPS = [
     "ai_assistant",
     "system",
     "telemetry",
+    "sites",
+    "operators",
+    "equipment",
+    "rentals",
+    "agentic",
 ]
 
 MIDDLEWARE = [

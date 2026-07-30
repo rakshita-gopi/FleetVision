@@ -1,0 +1,83 @@
+{
+  "telemetry_24h_5min": {
+    "timestamp": "object",
+    "asset_id": "object",
+    "assigned_site_id": "object",
+    "latitude": "float64",
+    "longitude": "float64",
+    "engine_state": "object",
+    "engine_rpm": "int64",
+    "engine_hours_total": "float64",
+    "fuel_level_pct": "float64",
+    "engine_temp_c": "float64",
+    "battery_voltage": "float64",
+    "speed_kmh": "float64",
+    "ground_truth_label": "object"
+  },
+  "maintenance": {
+    "maintenance_id": "object",
+    "asset_id": "object",
+    "timestamp": "object",
+    "maintenance_type": "object",
+    "engine_hours": "float64",
+    "fault_code": "object",
+    "downtime_hours": "float64",
+    "severity": "object"
+  },
+  "rentals": {
+    "rental_id": "object",
+    "asset_id": "object",
+    "site_id": "object",
+    "operator_id": "object",
+    "check_out_date": "object",
+    "expected_return_date": "object",
+    "actual_return_date": "float64",
+    "rental_days": "int64",
+    "synthetic_daily_rate": "float64",
+    "rental_status": "object"
+  },
+  "equipment_models": {
+    "model_id": "object",
+    "manufacturer": "object",
+    "model": "object",
+    "category": "object",
+    "gross_power_kw": "float64",
+    "operating_weight_kg": "float64",
+    "grounding": "object"
+  },
+  "operators": {
+    "operator_id": "object",
+    "name": "object",
+    "certification": "object",
+    "experience_years": "int64",
+    "shift": "object",
+    "status": "object"
+  },
+  "site_demand": {
+    "date": "object",
+    "site_id": "object",
+    "equipment_category": "object",
+    "requested_units": "int64",
+    "allocated_units": "int64",
+    "utilisation_pct": "float64"
+  },
+  "sites": {
+    "site_id": "object",
+    "site_name": "object",
+    "site_type": "object",
+    "latitude": "float64",
+    "longitude": "float64",
+    "status": "object"
+  },
+  "equipment": {
+    "asset_id": "object",
+    "model_id": "object",
+    "serial_number": "object",
+    "manufacture_year": "int64",
+    "acquisition_type": "object",
+    "current_status": "object",
+    "current_site": "object",
+    "current_operator": "object",
+    "total_engine_hours": "float64"
+  }
+}

@@ -1,11 +1,14 @@
 from rest_framework import serializers
 
+from equipment.models import Equipment
 from vehicles.models import Vehicle
 from .models import TelemetrySource
 
 
 class TelemetryIngestSerializer(serializers.Serializer):
-    vehicle_id = serializers.UUIDField()
+    vehicle_id = serializers.UUIDField(required=False)
+    equipment_id = serializers.UUIDField(required=False)
+    asset_id = serializers.CharField(required=False, allow_blank=True)
     latitude = serializers.FloatField()
     longitude = serializers.FloatField()
     speed = serializers.FloatField(required=False, default=0)
@@ -50,10 +53,32 @@ class TelemetryIngestSerializer(serializers.Serializer):
             raise serializers.ValidationError("gps_accuracy must be >= 0")
         return value
 
-    def validate_vehicle_id(self, value):
-        if not Vehicle.objects.filter(id=value).exists():
-            raise serializers.ValidationError("Vehicle not found")
-        return value
+    def validate(self, attrs):
+        equipment_id = attrs.get("equipment_id")
+        asset_id = (attrs.get("asset_id") or "").strip()
+        vehicle_id = attrs.get("vehicle_id")
+
+        resolved = None
+        if equipment_id:
+            eq = Equipment.objects.filter(id=equipment_id).first()
+            if not eq:
+                raise serializers.ValidationError({"equipment_id": "Equipment not found"})
+            resolved = eq.id
+        elif asset_id:
+            eq = Equipment.objects.filter(asset_id=asset_id).first()
+            if not eq:
+                raise serializers.ValidationError({"asset_id": "Equipment not found"})
+            resolved = eq.id
+        elif vehicle_id:
+            if Equipment.objects.filter(id=vehicle_id).exists() or Vehicle.objects.filter(id=vehicle_id).exists():
+                resolved = vehicle_id
+            else:
+                raise serializers.ValidationError({"vehicle_id": "Vehicle/equipment not found"})
+        else:
+            raise serializers.ValidationError("Provide vehicle_id, equipment_id, or asset_id")
+
+        attrs["vehicle_id"] = resolved
+        return attrs
 
 
 class VehicleTelemetrySerializer(serializers.Serializer):

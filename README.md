@@ -1,4 +1,12 @@
-# FleetVision AI
+# Rental-IQ (FleetVision stack)
+
+Smart equipment rental intelligence — Django REST + Next.js. Slice A: light yellow UI, equipment/rentals/sites from the CAT dataset, check-in/out, live map, Agentic Mode with human approval.
+
+See **[docs/rental-iq-mvp.md](docs/rental-iq-mvp.md)** for run commands and APIs.
+
+---
+
+# FleetVision AI (legacy name)
 
 AI-Powered Fleet Management System — Django REST API + Next.js dashboard for vehicles, drivers, trips, fuel, maintenance, expenses, GPS, and LLM reports.
 
@@ -62,8 +70,20 @@ On first start the container will:
 
 1. Wait for Postgres + Redis  
 2. Run migrations  
-3. Seed demo data  
+3. Seed demo data (+ Rental-IQ dataset when `SEED_RENTAL=true`)  
 4. Serve the API on port **8000**
+
+Rental seed:
+
+```bash
+docker compose exec backend python manage.py seed_rental_dataset --force
+```
+
+Compose mounts `./cat_smart_rental_dataset` at `/dataset`. After pulling Slice A changes, recreate once:
+
+```bash
+docker compose up -d backend --force-recreate
+```
 
 ### Useful Docker commands
 

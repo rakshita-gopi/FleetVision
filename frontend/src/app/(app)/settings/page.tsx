@@ -55,7 +55,7 @@ export default function SettingsPage() {
             <CardDescription>Fleet organization details</CardDescription>
           </CardHeader>
           <div className="space-y-4">
-            <Input defaultValue="FleetVision Logistics Pvt. Ltd." placeholder="Company name" />
+            <Input defaultValue="Rental-IQ Demo Co." placeholder="Company name" />
             <Input defaultValue="Chennai, Tamil Nadu" placeholder="Location" />
             <Button variant="outline" onClick={() => toast.success("Company info saved")}>Save</Button>
           </div>

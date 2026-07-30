@@ -1,5 +1,6 @@
-# FleetVision — Phase 2 stack (API + TimescaleDB + Redis + Kafka + telemetry consumer)
-# Frontend runs separately with: cd frontend && npm run dev
+# Rental-IQ / FleetVision — Phase 2+ stack (API + TimescaleDB + Redis + Kafka + telemetry consumer)
+# Frontend: cd frontend && npm run dev
+# Dataset: ./cat_smart_rental_dataset mounted at /dataset (SEED_RENTAL=true)
 #
 # First-time Timescale switch may require: docker compose down -v
 
@@ -93,6 +94,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - ./cat_smart_rental_dataset:/dataset:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/system/health/"]
       interval: 30s
@@ -117,6 +119,7 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
       KAFKA_TELEMETRY_TOPIC: ${KAFKA_TELEMETRY_TOPIC:-fleet.telemetry}
       SEED_DEMO: "false"
+      SEED_RENTAL: "false"
     depends_on:
       db:
         condition: service_healthy
@@ -128,6 +131,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - ./cat_smart_rental_dataset:/dataset:ro
 
 volumes:
   fleetvision_tsdata:

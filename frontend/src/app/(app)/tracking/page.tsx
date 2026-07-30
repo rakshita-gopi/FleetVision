@@ -8,7 +8,7 @@ import { TopNav } from "@/components/layout/top-nav";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import api, { ApiResponse } from "@/lib/api";
-import { LiveVehicleState, Vehicle } from "@/types";
+import { LiveVehicleState } from "@/types";
 import { toast } from "sonner";
 
 const FleetMap = dynamic(() => import("@/components/tracking/fleet-map"), {
@@ -30,7 +30,7 @@ function wsUrl(): string {
 
 export default function TrackingPage() {
   const [states, setStates] = useState<LiveVehicleState[]>([]);
-  const [vehicles, setVehicles] = useState<Record<string, Vehicle>>({});
+  const [equipment, setEquipment] = useState<Record<string, { asset_id: string }>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [live, setLive] = useState(true);
@@ -41,9 +41,13 @@ export default function TrackingPage() {
     (raw: LiveVehicleState[]): LiveVehicleState[] =>
       raw.map((s) => ({
         ...s,
-        vehicle_number: vehicles[s.vehicle_id]?.vehicle_number || s.vehicle_id.slice(0, 8),
+        vehicle_number:
+          s.asset_id ||
+          equipment[s.vehicle_id]?.asset_id ||
+          s.vehicle_number ||
+          s.vehicle_id.slice(0, 8),
       })),
-    [vehicles]
+    [equipment]
   );
 
   const fetchFleet = useCallback(() => {
@@ -63,12 +67,12 @@ export default function TrackingPage() {
   }, [enrich]);
 
   useEffect(() => {
-    api.get<ApiResponse<Vehicle[]>>("/vehicles/").then((res) => {
-      const map: Record<string, Vehicle> = {};
+    api.get<ApiResponse<{ id: string; asset_id: string }[]>>("/equipment/").then((res) => {
+      const map: Record<string, { asset_id: string }> = {};
       (res.data.data || []).forEach((v) => {
-        map[v.id] = v;
+        map[v.id] = { asset_id: v.asset_id };
       });
-      setVehicles(map);
+      setEquipment(map);
     });
   }, []);
 
@@ -165,7 +169,7 @@ export default function TrackingPage() {
 
   return (
     <>
-      <TopNav title="Live Tracking" subtitle="Phase 2 telemetry — Redis live state + Kafka pipeline" />
+      <TopNav title="Live Map" subtitle="Equipment telemetry — Redis live state + Kafka pipeline" />
       <div className="p-8">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
@@ -258,7 +262,7 @@ export default function TrackingPage() {
             ) : (
               <Card>
                 <p className="text-[var(--muted)] text-sm text-center py-8">
-                  No live vehicles — start the simulator
+                  No live equipment — seed dataset or start the simulator
                 </p>
               </Card>
             )}

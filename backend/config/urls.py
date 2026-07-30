@@ -9,7 +9,7 @@ from telemetry.views import FleetLiveView, TelemetryIngestView, VehicleLiveView,
 def api_root(_request):
     return JsonResponse(
         {
-            "name": "FleetVision API",
+            "name": "Rental-IQ API",
             "status": "ok",
             "version": "v1",
             "docs": "/api/docs/",
@@ -42,6 +42,11 @@ _api_patterns = [
     path("notifications/", include("notifications.urls")),
     path("ai/", include("ai_assistant.urls")),
     path("system/", include("system.urls")),
+    path("sites/", include("sites.urls")),
+    path("operators/", include("operators.urls")),
+    path("equipment/", include("equipment.urls")),
+    path("rentals/", include("rentals.urls")),
+    path("agentic/", include("agentic.urls")),
 ]
 
 urlpatterns = [

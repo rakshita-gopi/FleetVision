@@ -56,8 +56,13 @@ if [ "${SEED_DEMO:-true}" = "true" ]; then
   python manage.py seed_demo || true
 fi
 
+if [ "${SEED_RENTAL:-true}" = "true" ]; then
+  echo "Seeding Rental-IQ dataset (safe if already seeded)..."
+  python manage.py seed_rental_dataset --telemetry-limit "${TELEMETRY_SEED_LIMIT:-500}" || true
+fi
+
 echo "Collecting static files..."
 python manage.py collectstatic --noinput || true
 
-echo "Starting FleetVision API (ASGI/Daphne) on 0.0.0.0:8000..."
+echo "Starting Rental-IQ API (ASGI/Daphne) on 0.0.0.0:8000..."
 exec daphne -b 0.0.0.0 -p 8000 config.asgi:application

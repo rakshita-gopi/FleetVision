@@ -8,6 +8,7 @@ class TelemetrySource(models.TextChoices):
     MOBILE = "MOBILE", "Mobile"
     GPS_DEVICE = "GPS_DEVICE", "GPS Device"
     IOT_GATEWAY = "IOT_GATEWAY", "IoT Gateway"
+    DATASET = "DATASET", "Dataset"
 
 
 class VehicleTelemetry(models.Model):

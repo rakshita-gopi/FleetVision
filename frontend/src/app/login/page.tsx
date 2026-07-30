@@ -33,7 +33,7 @@ function AuthForm() {
     setLoading(true);
     try {
       await login(email, password);
-      toast.success("Welcome to FleetVision AI");
+      toast.success("Welcome to Rental-IQ");
     } catch {
       toast.error("Invalid credentials. Try admin@fleetvision.ai / admin123");
     } finally {
@@ -89,7 +89,7 @@ function AuthForm() {
               <Truck className="h-7 w-7" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-[var(--foreground)]">FleetVision AI</h1>
+              <h1 className="text-3xl font-bold text-[var(--foreground)]">Rental-IQ</h1>
               <p className="text-[var(--muted)] text-sm font-medium tracking-wide">Intelligent Fleet Management</p>
             </div>
           </div>
@@ -130,7 +130,7 @@ function AuthForm() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: "var(--primary-soft)", color: "var(--primary)" }}>
                 <Truck className="h-5 w-5" />
               </div>
-              <h1 className="text-xl font-bold text-[var(--foreground)]">FleetVision AI</h1>
+              <h1 className="text-xl font-bold text-[var(--foreground)]">Rental-IQ</h1>
             </div>
 
             <div className="flex rounded-xl p-1 mb-8" style={{ background: "var(--muted-bg)" }}>
@@ -154,7 +154,7 @@ function AuthForm() {
               {mode === "login" ? (
                 <motion.div key="login" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.2 }}>
                   <h2 className="text-2xl font-bold text-[var(--foreground)] mb-1">Welcome back</h2>
-                  <p className="text-[var(--muted)] text-sm mb-6">Sign in to your fleet command center</p>
+                  <p className="text-[var(--muted)] text-sm mb-6">Sign in to your rental operations center</p>
                   <form onSubmit={handleLogin} className="space-y-5">
                     <div>
                       <label className="text-xs font-medium text-[var(--muted)] mb-1.5 block">Email</label>
@@ -179,7 +179,7 @@ function AuthForm() {
               ) : (
                 <motion.div key="signup" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}>
                   <h2 className="text-2xl font-bold text-[var(--foreground)] mb-1">Create account</h2>
-                  <p className="text-[var(--muted)] text-sm mb-6">Join FleetVision AI today</p>
+                  <p className="text-[var(--muted)] text-sm mb-6">Join Rental-IQ today</p>
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div>
                       <label className="text-xs font-medium text-[var(--muted)] mb-1.5 block">Full Name</label>
