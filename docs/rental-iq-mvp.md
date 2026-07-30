@@ -81,6 +81,20 @@ python -m simulator
 | `RENTAL_DATASET_PATH` | `/dataset` | CSV directory inside container |
 | `TELEMETRY_SEED_LIMIT` | 500 | Rows from `telemetry_24h_5min.csv` |
 
-## Out of scope (later slices)
+## QR Check-In / Check-Out desk
 
-Full MCP server, Celery/Grafana, multi-agent LangGraph, loyalty, trained demand ML.
+Separate sidebar module (**QR Check-In/Out**) implementing the rental possession workflow:
+
+1. Manager generates check-out QR → creates `PENDING_CHECKOUT` rental (`RNT#####` + `TXN-YYYYMMDD-#####`)
+2. QR encodes **only** `rental_id`
+3. Operator scans → sees equipment, customer, operator, health, fuel, GPS
+4. Confirm Checkout → `ACTIVE` + snapshots
+5. Scan again on return → Confirm Check-In → `COMPLETED`, invoice number, QR expired
+
+```bash
+# after Docker is up
+docker compose exec backend python manage.py migrate
+```
+
+APIs under `/api/v1/qr-desk/`: `generate/`, `scan/`, `confirm-checkout/`, `confirm-checkin/`, `open/`.
+

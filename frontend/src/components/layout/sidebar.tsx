@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, HardHat, Package, MapPin, ClipboardList,
-  Bot, Bell, Activity, Settings, LogOut, ChevronLeft, ChevronRight, Sparkles,
+  Bot, Bell, Activity, Settings, LogOut, ChevronLeft, ChevronRight, Sparkles, QrCode,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
@@ -17,6 +17,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/equipment", label: "Equipment", icon: HardHat },
   { href: "/rentals", label: "Rentals", icon: ClipboardList },
+  { href: "/qr-desk", label: "QR Check-In/Out", icon: QrCode },
   { href: "/sites", label: "Sites", icon: MapPin },
   { href: "/operators", label: "Operators", icon: Package },
   { href: "/tracking", label: "Live Map", icon: MapPin },

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "equipment",
     "rentals",
     "agentic",
+    "qr_desk",
 ]
 
 MIDDLEWARE = [

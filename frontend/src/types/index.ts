@@ -208,6 +208,7 @@ export interface Operator {
 export interface Rental {
   id: string;
   rental_id: string;
+  transaction_id?: string | null;
   equipment: string;
   asset_id?: string;
   equipment_category?: string;
@@ -217,12 +218,18 @@ export interface Rental {
   operator?: string | null;
   operator_id?: string | null;
   operator_name?: string | null;
+  customer_id?: string;
+  customer_name?: string;
   check_out_date?: string | null;
   expected_return_date?: string | null;
   actual_return_date?: string | null;
+  check_out_at?: string | null;
+  check_in_at?: string | null;
   rental_days: number;
   daily_rate: number;
   rental_status: string;
+  invoice_number?: string;
+  qr_expired?: boolean;
 }
 
 export interface RentalDashboard {

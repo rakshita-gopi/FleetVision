@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 const statusColors: Record<string, { bg: string; text: string; border: string }> = {
   Available: { bg: "var(--success-soft)", text: "var(--success)", border: "color-mix(in srgb, var(--success) 25%, transparent)" },
   AVAILABLE: { bg: "var(--success-soft)", text: "var(--success)", border: "color-mix(in srgb, var(--success) 25%, transparent)" },
+  PENDING_CHECKOUT: { bg: "var(--info-soft)", text: "var(--info)", border: "color-mix(in srgb, var(--info) 25%, transparent)" },
   ACTIVE: { bg: "var(--primary-soft)", text: "var(--primary)", border: "color-mix(in srgb, var(--primary) 25%, transparent)" },
   IDLE: { bg: "var(--warning-soft)", text: "var(--warning)", border: "color-mix(in srgb, var(--warning) 25%, transparent)" },
   MAINTENANCE: { bg: "var(--warning-soft)", text: "var(--warning)", border: "color-mix(in srgb, var(--warning) 25%, transparent)" },
