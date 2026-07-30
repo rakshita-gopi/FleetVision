@@ -101,6 +101,10 @@ export interface Notification {
   title: string;
   message: string;
   notification_type: string;
+  severity?: string;
+  related_rental_id?: string;
+  related_asset_id?: string;
+  metadata?: Record<string, unknown>;
   is_read: boolean;
   created_at: string;
 }

@@ -4,10 +4,14 @@ from .views import (
     ActionProposalListView,
     ActionProposalRejectView,
     AgentSessionDetailView,
+    AgenticCatalogView,
     AgenticChatView,
+    AgenticRunView,
 )
 
 urlpatterns = [
+    path("catalog/", AgenticCatalogView.as_view(), name="agentic-catalog"),
+    path("run/", AgenticRunView.as_view(), name="agentic-run"),
     path("chat/", AgenticChatView.as_view(), name="agentic-chat"),
     path("sessions/<uuid:session_id>/", AgentSessionDetailView.as_view(), name="agentic-session"),
     path("proposals/", ActionProposalListView.as_view(), name="agentic-proposals"),

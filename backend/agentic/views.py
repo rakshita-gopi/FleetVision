@@ -1,13 +1,38 @@
 from django.utils import timezone
-from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from common.permissions import IsFleetManagerOrAdmin
 from common.response import api_response
 from .models import ActionProposal, AgentSession
+from .runtime import catalog, run_agui_turn
 from .serializers import ActionProposalSerializer, AgentSessionSerializer
 from .services import execute_proposal, run_agent_chat
+
+
+class AgenticCatalogView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return api_response(True, "Agent & worker catalog", catalog())
+
+
+class AgenticRunView(APIView):
+    """AG-UI inspired turn: returns event stream payload + shared state."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        message = (request.data.get("message") or request.data.get("question") or "").strip()
+        if not message:
+            return api_response(False, "message is required", status_code=400)
+        result = run_agui_turn(
+            user=request.user,
+            message=message,
+            session_id=request.data.get("session_id"),
+            agent_id=request.data.get("agent_id"),
+        )
+        return api_response(True, "Agent run", result)
 
 
 class AgenticChatView(APIView):
@@ -17,6 +42,15 @@ class AgenticChatView(APIView):
         message = (request.data.get("message") or request.data.get("question") or "").strip()
         if not message:
             return api_response(False, "message is required", status_code=400)
+        # Prefer AG-UI run so UI gets events + HITL; chat stays as alias
+        if request.data.get("agui", True):
+            result = run_agui_turn(
+                user=request.user,
+                message=message,
+                session_id=request.data.get("session_id"),
+                agent_id=request.data.get("agent_id"),
+            )
+            return api_response(True, "Agent reply", result)
         session_id = request.data.get("session_id")
         result = run_agent_chat(user=request.user, message=message, session_id=session_id)
         return api_response(True, "Agent reply", result)

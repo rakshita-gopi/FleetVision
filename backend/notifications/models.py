@@ -14,6 +14,10 @@ class NotificationType(models.TextChoices):
     RENTAL_DUE_SOON = "Rental Due Soon", "Rental Due Soon"
     RENTAL_DUE_TODAY = "Rental Due Today", "Rental Due Today"
     RENTAL_OVERDUE = "Rental Overdue", "Rental Overdue"
+    ANOMALY_IDLE = "Anomaly Idle", "Anomaly Idle"
+    ANOMALY_UNASSIGNED = "Anomaly Unassigned", "Anomaly Unassigned"
+    ANOMALY_UNDERUSE = "Anomaly Underuse", "Anomaly Underuse"
+    ANOMALY_MISUSE = "Anomaly Misuse", "Anomaly Misuse"
 
 
 class NotificationSeverity(models.TextChoices):

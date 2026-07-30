@@ -66,6 +66,9 @@ fi
 echo "Scanning rental due / overdue alerts..."
 python manage.py scan_rental_alerts || true
 
+echo "Scanning asset misuse / idle / unassigned anomalies..."
+python manage.py scan_anomalies || true
+
 echo "Collecting static files..."
 python manage.py collectstatic --noinput || true
 

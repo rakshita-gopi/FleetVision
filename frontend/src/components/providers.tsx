@@ -3,6 +3,7 @@
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { AgenticModeProvider } from "@/contexts/agentic-mode-context";
 import { Toaster } from "sonner";
 import { ReactNode } from "react";
 
@@ -12,8 +13,10 @@ export function Providers({ children }: { children: ReactNode }) {
   const tree = (
     <ThemeProvider>
       <AuthProvider>
-        {children}
-        <Toaster position="top-right" richColors />
+        <AgenticModeProvider>
+          {children}
+          <Toaster position="top-right" richColors />
+        </AgenticModeProvider>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -229,11 +229,11 @@ export default function QrDeskPage() {
 
   return (
     <>
-      <TopNav title="QR Check-In / Out" subtitle="Generate checkout QR · scan to possess or return" />
+      <TopNav title="Dispatch Hub" subtitle="Generate checkout QR · scan to possess or return" />
       <div className="p-6 lg:p-8 space-y-6">
         <SpotlightCard className="p-5" spotlightColor="rgba(212, 160, 23, 0.2)">
           <h2 className="text-xl font-bold">
-            <GradientText>QR possession desk</GradientText>
+            <GradientText>Dispatch possession desk</GradientText>
           </h2>
           <p className="text-sm text-[var(--muted)] mt-1 max-w-3xl">
             Manager generates a QR containing only the rental ID. Operator scans to confirm checkout (rental starts)

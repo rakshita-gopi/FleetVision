@@ -50,6 +50,7 @@ _api_patterns = [
     path("qr-desk/", include("qr_desk.urls")),
     path("usage/", include("usage_logging.urls")),
     path("demand/", include("demand.urls")),
+    path("anomalies/", include("anomalies.urls")),
 ]
 
 urlpatterns = [

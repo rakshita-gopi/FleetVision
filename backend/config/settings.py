@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "qr_desk",
     "usage_logging",
     "demand",
+    "anomalies",
 ]
 
 MIDDLEWARE = [
