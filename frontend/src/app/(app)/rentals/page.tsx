@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { TopNav } from "@/components/layout/top-nav";
 import { DataTable } from "@/components/shared/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,16 @@ export default function RentalsPage() {
       load();
     } catch {
       toast.error("Check-in failed");
+    }
+  };
+
+  const cancelPending = async (rentalId: string) => {
+    try {
+      await api.post("/qr-desk/cancel-pending/", { rental_id: rentalId });
+      toast.success("Pending checkout cancelled");
+      load();
+    } catch {
+      toast.error("Cancel failed");
     }
   };
 
@@ -159,13 +170,34 @@ export default function RentalsPage() {
               render: (row) => `₹${Number(row.daily_rate || 0).toFixed(0)}`,
             },
           ]}
-          actions={(row) =>
-            row.rental_status === "ACTIVE" && !row.actual_return_date ? (
-              <Button size="sm" variant="outline" onClick={() => checkIn(String(row.id))}>
-                Check in
-              </Button>
-            ) : null
-          }
+          actions={(row) => {
+            const status = String(row.rental_status || "").toUpperCase();
+            const open = !row.actual_return_date && (status === "ACTIVE" || status === "OVERDUE");
+            if (open) {
+              return (
+                <Button size="sm" variant="outline" onClick={() => checkIn(String(row.id))}>
+                  Check in
+                </Button>
+              );
+            }
+            if (status === "PENDING_CHECKOUT") {
+              return (
+                <div className="inline-flex items-center gap-2 justify-end">
+                  <Link href="/qr-desk" className="text-xs font-medium text-[var(--primary)] hover:underline">
+                    Dispatch
+                  </Link>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => cancelPending(String(row.rental_id || row.id))}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              );
+            }
+            return <span className="text-xs text-[var(--muted)]">Closed</span>;
+          }}
         />
       </div>
     </>
