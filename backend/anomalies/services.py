@@ -7,6 +7,7 @@ from statistics import mean, pstdev
 from django.db.models import Q
 from django.utils import timezone
 
+from common.lookup import is_uuid
 from ai_assistant.services import call_ollama
 from equipment.models import Equipment, EquipmentStatus
 from notifications.models import Notification, NotificationSeverity, NotificationType
@@ -79,7 +80,12 @@ def detect_anomalies(*, emit_notifications: bool = True) -> dict:
         .distinct()[:200]
     )
     for vid in recent_ids:
-        qs = VehicleTelemetry.objects.filter(vehicle_id=vid, time__gte=lookback).order_by("time")
+        if not is_uuid(vid):
+            continue
+        try:
+            qs = VehicleTelemetry.objects.filter(vehicle_id=vid, time__gte=lookback).order_by("time")
+        except Exception:
+            continue
         fuels = list(qs.exclude(fuel_level__isnull=True).values_list("fuel_level", flat=True)[:500])
         if len(fuels) >= 4:
             drop = max(0.0, float(fuels[0]) - float(fuels[-1]))
@@ -306,7 +312,9 @@ def _llm_brief(anomalies: list[dict], counts: dict) -> dict:
     if llm:
         return {"source": "qwen3", "text": llm.strip()}
 
-    lines = [f"Detected {sum(counts.values())} anomaly signal(s): {dict(counts)}."]
+    lines = [f"Detected {sum(counts.values())} anomaly signal(s)."]
+    if counts:
+        lines[0] += " " + ", ".join(f"{k.replace('_', ' ')}: {v}" for k, v in counts.items()) + "."
     for a in anomalies[:6]:
         lines.append(f"• [{a['kind']}/{a['severity']}] {a['title']} — {a['detail']}")
     if not anomalies:

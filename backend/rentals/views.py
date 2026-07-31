@@ -3,8 +3,8 @@ from datetime import date
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q
 
+from common.lookup import get_by_uuid_or_code
 from common.response import api_response
 from common.permissions import IsFleetManagerOrAdmin
 from equipment.models import Equipment, EquipmentStatus
@@ -32,7 +32,7 @@ class RentalViewSet(viewsets.ModelViewSet):
         overdue = request.query_params.get("overdue")
         if overdue == "1":
             qs = qs.filter(
-                rental_status=RentalStatus.ACTIVE,
+                rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
                 expected_return_date__lt=date.today(),
                 actual_return_date__isnull=True,
             )
@@ -47,10 +47,7 @@ class RentalViewSet(viewsets.ModelViewSet):
         site_id = request.data.get("site_id")
         operator_id = request.data.get("operator_id")
         expected = request.data.get("expected_return_date")
-        try:
-            equipment = Equipment.objects.filter(Q(id=equipment_id) | Q(asset_id=equipment_id)).first()
-        except Exception:
-            equipment = Equipment.objects.filter(asset_id=equipment_id).first()
+        equipment = get_by_uuid_or_code(Equipment, equipment_id, "asset_id")
         if not equipment:
             return api_response(False, "Equipment not found", status_code=404)
         if equipment.current_status not in (EquipmentStatus.AVAILABLE, EquipmentStatus.IDLE):
@@ -59,13 +56,16 @@ class RentalViewSet(viewsets.ModelViewSet):
         from sites.models import Site
         from operators.models import Operator
 
-        site = Site.objects.filter(Q(id=site_id) | Q(site_id=site_id)).first() if site_id else None
-        operator = (
-            Operator.objects.filter(Q(id=operator_id) | Q(operator_id=operator_id)).first() if operator_id else None
-        )
+        site = get_by_uuid_or_code(Site, site_id, "site_id") if site_id else None
+        operator = get_by_uuid_or_code(Operator, operator_id, "operator_id") if operator_id else None
         rental_code = f"RNT{Rental.objects.count() + 1:05d}"
         while Rental.objects.filter(rental_id=rental_code).exists():
             rental_code = f"RNT{Rental.objects.count() + 100:05d}"
+
+        try:
+            expected_date = date.fromisoformat(str(expected)[:10]) if expected else date.today()
+        except ValueError:
+            expected_date = date.today()
 
         rental = Rental.objects.create(
             rental_id=rental_code,
@@ -73,7 +73,7 @@ class RentalViewSet(viewsets.ModelViewSet):
             site=site,
             operator=operator,
             check_out_date=date.today(),
-            expected_return_date=expected or date.today(),
+            expected_return_date=expected_date,
             rental_status=RentalStatus.ACTIVE,
             daily_rate=float(request.data.get("daily_rate") or 500),
         )

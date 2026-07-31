@@ -111,6 +111,7 @@ class QrPendingListView(APIView):
                     "rental_id": r.rental_id,
                     "transaction_id": r.transaction_id,
                     "asset_id": r.equipment.asset_id,
+                    "equipment_id": str(r.equipment_id),
                     "status": r.rental_status,
                     "customer_name": r.customer_name,
                     "operator_name": r.operator.name if r.operator else None,
@@ -119,3 +120,59 @@ class QrPendingListView(APIView):
                 }
             )
         return api_response(True, "Open QR rentals", rows)
+
+
+class QrEligibleEquipmentView(APIView):
+    """Assets that can receive a new (or reused pending) checkout QR."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from equipment.models import Equipment, EquipmentStatus
+        from rentals.models import Rental, RentalStatus
+        from equipment.serializers import EquipmentSerializer
+        from .services import _close_stale_rentals_for_yard_asset
+
+        # Repair AVAILABLE/IDLE assets that still carry ACTIVE rentals (seed mismatch)
+        for eq in Equipment.objects.filter(current_status__in=[EquipmentStatus.AVAILABLE, EquipmentStatus.IDLE])[:40]:
+            _close_stale_rentals_for_yard_asset(eq)
+
+        active_ids = set(
+            Rental.objects.filter(
+                rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE]
+            ).values_list("equipment_id", flat=True)
+        )
+        qs = (
+            Equipment.objects.select_related("model_ref", "current_site", "current_operator")
+            .filter(current_status__in=[EquipmentStatus.AVAILABLE, EquipmentStatus.IDLE])
+            .exclude(id__in=active_ids)
+            .order_by("asset_id")[:80]
+        )
+        return api_response(True, "Eligible equipment", EquipmentSerializer(qs, many=True).data)
+
+
+class QrCancelPendingView(APIView):
+    """Cancel a pending checkout so the asset can be used for a new QR."""
+
+    permission_classes = [IsFleetManagerOrAdmin]
+
+    def post(self, request):
+        from rentals.models import Rental, RentalStatus
+        from equipment.models import EquipmentStatus
+
+        code = request.data.get("rental_id") or request.data.get("code") or ""
+        rental = resolve_rental(code)
+        if not rental:
+            return api_response(False, "Rental not found", status_code=404)
+        if rental.rental_status != RentalStatus.PENDING_CHECKOUT:
+            return api_response(False, f"Only pending checkouts can be cancelled (status={rental.rental_status})", status_code=400)
+        rental.rental_status = RentalStatus.CANCELLED
+        rental.qr_expired = True
+        rental.save()
+        eq = rental.equipment
+        if eq and eq.current_status not in (EquipmentStatus.MAINTENANCE, EquipmentStatus.RETIRED):
+            eq.current_status = EquipmentStatus.AVAILABLE
+            eq.current_operator = None
+            eq.save()
+        return api_response(True, f"Cancelled pending checkout {rental.rental_id}", {"rental_id": rental.rental_id, "asset_id": eq.asset_id if eq else None})
+

@@ -1,7 +1,9 @@
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
+from common.lookup import is_uuid
 from common.permissions import IsFleetManagerOrAdmin
 from common.response import api_response
 from .models import ActionProposal, AgentSession
@@ -14,7 +16,8 @@ class AgenticCatalogView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return api_response(True, "Agent & worker catalog", catalog())
+        domain = request.query_params.get("domain") or None
+        return api_response(True, "Agent & worker catalog", catalog(domain))
 
 
 class AgenticRunView(APIView):
@@ -26,13 +29,26 @@ class AgenticRunView(APIView):
         message = (request.data.get("message") or request.data.get("question") or "").strip()
         if not message:
             return api_response(False, "message is required", status_code=400)
-        result = run_agui_turn(
-            user=request.user,
-            message=message,
-            session_id=request.data.get("session_id"),
-            agent_id=request.data.get("agent_id"),
-        )
-        return api_response(True, "Agent run", result)
+        raw_session = request.data.get("session_id")
+        session_id = raw_session if is_uuid(raw_session) else None
+        try:
+            result = run_agui_turn(
+                user=request.user,
+                message=message,
+                session_id=session_id,
+                agent_id=request.data.get("agent_id"),
+                config=request.data.get("config") or {},
+            )
+            return api_response(True, "Agent run", result)
+        except ValidationError as exc:
+            return api_response(
+                False,
+                "Agent run failed: an asset or rental code was treated as an id. Please retry.",
+                {"detail": exc.messages if hasattr(exc, "messages") else str(exc)},
+                status_code=400,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return api_response(False, f"Agent run failed: {exc}", status_code=500)
 
 
 class AgenticChatView(APIView):
@@ -49,6 +65,7 @@ class AgenticChatView(APIView):
                 message=message,
                 session_id=request.data.get("session_id"),
                 agent_id=request.data.get("agent_id"),
+                config=request.data.get("config") or {},
             )
             return api_response(True, "Agent reply", result)
         session_id = request.data.get("session_id")

@@ -4,6 +4,7 @@ from typing import Any
 from django.db.models import Avg, Count, Q
 from django.utils import timezone
 
+from common.lookup import get_by_uuid_or_code, is_uuid
 from ai_assistant.services import call_ollama
 from equipment.models import Equipment, EquipmentStatus
 from rentals.models import Rental, RentalStatus
@@ -40,9 +41,9 @@ def search_equipment(query: str = "", status: str | None = None, limit: int = 20
 def list_overdue_rentals(limit: int = 20) -> list[dict]:
     today = date.today()
     qs = (
-        Rental.objects.select_related("equipment", "site")
+        Rental.objects.select_related("equipment", "site", "operator")
         .filter(
-            rental_status=RentalStatus.ACTIVE,
+            rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
             expected_return_date__lt=today,
             actual_return_date__isnull=True,
         )
@@ -54,6 +55,8 @@ def list_overdue_rentals(limit: int = 20) -> list[dict]:
             "id": str(r.id),
             "asset_id": r.equipment.asset_id,
             "site_id": r.site.site_id if r.site else None,
+            "operator_id": r.operator.operator_id if r.operator else None,
+            "customer_name": r.customer_name or "",
             "expected_return_date": str(r.expected_return_date),
             "days_overdue": (today - r.expected_return_date).days if r.expected_return_date else 0,
         }
@@ -95,9 +98,14 @@ def propose_action(
     equipment = None
     rental = None
     if asset_id:
-        equipment = Equipment.objects.filter(Q(asset_id=asset_id) | Q(id=asset_id)).first()
+        equipment = get_by_uuid_or_code(Equipment, str(asset_id).strip(), "asset_id")
+        if equipment is None:
+            # Final fallback — never pass asset codes into UUID FK fields
+            equipment = Equipment.objects.filter(asset_id__iexact=str(asset_id).strip()).first()
     if rental_id:
-        rental = Rental.objects.filter(Q(rental_id=rental_id) | Q(id=rental_id)).first()
+        rental = get_by_uuid_or_code(Rental, str(rental_id).strip(), "rental_id")
+        if rental is None:
+            rental = Rental.objects.filter(rental_id__iexact=str(rental_id).strip()).first()
         if rental and not equipment:
             equipment = rental.equipment
     return ActionProposal.objects.create(
@@ -158,7 +166,7 @@ def execute_proposal(proposal: ActionProposal) -> str:
         if site_id:
             from sites.models import Site
 
-            site = Site.objects.filter(Q(site_id=site_id) | Q(id=site_id)).first()
+            site = get_by_uuid_or_code(Site, site_id, "site_id")
             if site:
                 eq.current_site = site
                 eq.current_status = EquipmentStatus.ACTIVE
@@ -172,18 +180,55 @@ def execute_proposal(proposal: ActionProposal) -> str:
     return f"Action {action} recorded"
 
 
-def _rule_based_reply(message: str, session: AgentSession, user) -> tuple[str, list, list]:
+def _rule_based_reply(
+    message: str,
+    session: AgentSession,
+    user,
+    *,
+    agent_id: str | None = None,
+) -> tuple[str, list, list]:
     """Deterministic offline agent: tool results + optional ActionProposal."""
     lower = message.lower()
     tools: list[dict] = []
     proposals: list[ActionProposal] = []
+
+    # Prefer domain agent intent over keyword collisions (e.g. "underuse" matching "under")
+    if agent_id == "anomaly" or any(
+        k in lower for k in ("anomaly", "misuse", "unassigned", "underuse", "long idle")
+    ):
+        from anomalies.services import detect_anomalies
+
+        scan = detect_anomalies(emit_notifications=False)
+        tools.append({"tool": "detect_anomalies", "result_count": scan.get("total", 0)})
+        text = (
+            f"Anomaly scan found {scan.get('total', 0)} signal(s). "
+            f"Breakdown: {scan.get('counts') or {}}."
+        )
+        narrative = (scan.get("narrative") or {}).get("text")
+        if narrative:
+            text = narrative
+        top = (scan.get("anomalies") or [])[:1]
+        if top:
+            a = top[0]
+            prop = propose_action(
+                user=user,
+                session=session,
+                action_type=ActionProposal.ActionType.INSPECT,
+                rationale=a.get("detail") or a.get("title") or "Review anomaly finding.",
+                asset_id=a.get("asset_id"),
+                rental_id=a.get("rental_id"),
+                payload={"kind": a.get("kind"), "score": a.get("score")},
+            )
+            proposals.append(prop)
+            text += f"\n\nProposed: **inspect** `{a.get('asset_id')}` (proposal {prop.id})."
+        return text, tools, proposals
 
     overdue = list_overdue_rentals()
     util = utilisation_summary()
     tools.append({"tool": "list_overdue_rentals", "result_count": len(overdue)})
     tools.append({"tool": "utilisation_summary", "result": util})
 
-    if any(k in lower for k in ("overdue", "late", "return")):
+    if agent_id == "alert" or any(k in lower for k in ("overdue", "late", "return", "due soon", "due today")):
         if overdue:
             lines = [f"- {o['rental_id']} ({o['asset_id']}) overdue {o['days_overdue']}d" for o in overdue[:8]]
             text = "Overdue rentals:\n" + "\n".join(lines)
@@ -202,7 +247,9 @@ def _rule_based_reply(message: str, session: AgentSession, user) -> tuple[str, l
             text = "No overdue rentals right now."
         return text, tools, proposals
 
-    if any(k in lower for k in ("util", "idle", "under", "available")):
+    if agent_id in ("utilisation", "orchestrator", "dispatch") or any(
+        k in lower for k in ("util", "idle", "available", "realloc")
+    ):
         text = (
             f"Fleet utilisation ~{util['utilisation_pct']}% "
             f"(active={util['active_count']}, available={util['available_count']}, idle={util['idle_count']}). "
@@ -224,7 +271,7 @@ def _rule_based_reply(message: str, session: AgentSession, user) -> tuple[str, l
             text += f"\n\nProposed: **reallocate** `{eq['asset_id']}` (proposal {prop.id})."
         return text, tools, proposals
 
-    if any(k in lower for k in ("maintain", "inspect", "service", "fault")):
+    if agent_id == "maintenance" or any(k in lower for k in ("maintain", "inspect", "service", "fault")):
         maint = search_equipment(status="MAINTENANCE", limit=5)
         high_hours = list(
             Equipment.objects.order_by("-total_engine_hours").select_related("model_ref")[:5]
@@ -267,8 +314,15 @@ def _rule_based_reply(message: str, session: AgentSession, user) -> tuple[str, l
     return text, tools, proposals
 
 
-def run_agent_chat(*, user, message: str, session_id: str | None = None) -> dict:
-    if session_id:
+def run_agent_chat(
+    *,
+    user,
+    message: str,
+    session_id: str | None = None,
+    agent_id: str | None = None,
+    forced_answer: str | None = None,
+) -> dict:
+    if session_id and is_uuid(session_id):
         session = AgentSession.objects.filter(id=session_id, user=user).first()
         if not session:
             session = AgentSession.objects.create(user=user, title=message[:60])
@@ -277,19 +331,25 @@ def run_agent_chat(*, user, message: str, session_id: str | None = None) -> dict
 
     AgentMessage.objects.create(session=session, role=AgentMessage.Role.USER, content=message)
 
-    # Prefer deterministic tools; optionally enrich with LLM prose
-    reply, tools, proposals = _rule_based_reply(message, session, user)
+    if forced_answer:
+        reply, tools, proposals = forced_answer, [], []
+    else:
+        # Prefer deterministic tools; optionally enrich with LLM prose
+        reply, tools, proposals = _rule_based_reply(message, session, user, agent_id=agent_id)
 
-    system = (
-        "You are Rental-IQ Agentic Mode. Be concise. Do not invent asset IDs. "
-        "Human approval is required before actions execute."
-    )
-    llm = call_ollama(
-        f"User asked: {message}\n\nTool facts:\n{reply}\n\nRewrite a short helpful answer (keep proposal IDs).",
-        system_msg=system,
-        timeout=12,
-    )
-    final = llm.strip() if llm else reply
+    if not forced_answer:
+        system = (
+            "You are Rental-IQ Agentic Mode. Be concise. Do not invent asset IDs. "
+            "Human approval is required before actions execute."
+        )
+        llm = call_ollama(
+            f"User asked: {message}\n\nTool facts:\n{reply}\n\nRewrite a short helpful answer (keep proposal IDs).",
+            system_msg=system,
+            timeout=12,
+        )
+        final = llm.strip() if llm else reply
+    else:
+        final = reply
 
     AgentMessage.objects.create(
         session=session,

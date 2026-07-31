@@ -7,12 +7,10 @@ import {
   CheckCheck,
   ExternalLink,
   Moon,
-  Search,
   ShieldAlert,
   Sun,
   X,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
@@ -113,11 +111,6 @@ export function TopNav({ title, subtitle }: { title: string; subtitle?: string }
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted)]" />
-          <Input placeholder="Search fleet..." className="pl-9 w-64" />
-        </div>
-
         <div className="relative" ref={panelRef}>
           <button
             onClick={() => setShowNotifs((v) => !v)}

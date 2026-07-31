@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { useAuth } from "@/contexts/auth-context";
 import { useAgenticMode } from "@/contexts/agentic-mode-context";
-import { cn } from "@/lib/utils";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth();
@@ -32,7 +31,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={cn("min-h-screen", agenticMode ? "bg-[#0c0a09]" : "app-bg")}>
+    <div className="app-bg min-h-screen">
       <Sidebar />
       <main className="ml-64 min-h-screen transition-all duration-300">{children}</main>
     </div>

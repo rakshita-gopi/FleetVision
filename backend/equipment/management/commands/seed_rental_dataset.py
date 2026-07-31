@@ -114,7 +114,13 @@ class Command(BaseCommand):
         operators = {o.operator_id: o for o in Operator.objects.all()}
         models = {m.model_id: m for m in EquipmentModel.objects.all()}
 
-        for row in _read(root / "equipment.csv"):
+        for i, row in enumerate(_read(root / "equipment.csv")):
+            site_code = (row.get("current_site") or "").strip()
+            op_code = (row.get("current_operator") or "").strip()
+            if not site_code:
+                site_code = list(sites.keys())[i % max(len(sites), 1)] if sites else ""
+            if not op_code:
+                op_code = list(operators.keys())[i % max(len(operators), 1)] if operators else ""
             Equipment.objects.update_or_create(
                 asset_id=row["asset_id"],
                 defaults={
@@ -123,10 +129,8 @@ class Command(BaseCommand):
                     "manufacture_year": int(row["manufacture_year"]) if row.get("manufacture_year") else None,
                     "acquisition_type": row.get("acquisition_type") or "",
                     "current_status": (row.get("current_status") or "AVAILABLE").upper(),
-                    "current_site": sites.get(row.get("current_site")) if row.get("current_site") else None,
-                    "current_operator": operators.get(row.get("current_operator"))
-                    if row.get("current_operator")
-                    else None,
+                    "current_site": sites.get(site_code) if site_code else None,
+                    "current_operator": operators.get(op_code) if op_code else None,
                     "total_engine_hours": float(row.get("total_engine_hours") or 0),
                 },
             )
@@ -137,19 +141,35 @@ class Command(BaseCommand):
         if limit:
             rentals_rows = rentals_rows[:limit]
 
-        for row in rentals_rows:
+        for i, row in enumerate(rentals_rows):
             eq = equipment.get(row.get("asset_id"))
             if not eq:
                 continue
             status = (row.get("rental_status") or "ACTIVE").upper()
             if status not in RentalStatus.values:
                 status = RentalStatus.ACTIVE
+            if status == "OVERDUE_RETURN":
+                status = RentalStatus.OVERDUE if not row.get("actual_return_date") else RentalStatus.COMPLETED
+            cust_id = (row.get("customer_id") or "").strip()
+            cust_name = (row.get("customer_name") or "").strip()
+            if not cust_name and status in (RentalStatus.ACTIVE, RentalStatus.OVERDUE, RentalStatus.PENDING_CHECKOUT):
+                names = [
+                    "Chennai Metro Civil",
+                    "TN Infra Pvt Ltd",
+                    "Coromandel Quarries",
+                    "Bayshore Logistics",
+                    "Delta Earthmovers",
+                ]
+                cust_name = names[i % len(names)]
+                cust_id = cust_id or f"CUST{100 + (i % 50)}"
             Rental.objects.update_or_create(
                 rental_id=row["rental_id"],
                 defaults={
                     "equipment": eq,
-                    "site": sites.get(row.get("site_id")),
-                    "operator": operators.get(row.get("operator_id")),
+                    "site": sites.get(row.get("site_id")) or eq.current_site,
+                    "operator": operators.get(row.get("operator_id")) or eq.current_operator,
+                    "customer_id": cust_id,
+                    "customer_name": cust_name,
                     "check_out_date": _parse_date(row.get("check_out_date")),
                     "expected_return_date": _parse_date(row.get("expected_return_date")),
                     "actual_return_date": _parse_date(row.get("actual_return_date")),

@@ -98,7 +98,12 @@ export default function QrDeskPage() {
   }, []);
 
   useEffect(() => {
-    api.get<ApiResponse<Equipment[]>>("/equipment/?status=AVAILABLE").then((r) => setEquipment(r.data.data || []));
+    api
+      .get<ApiResponse<Equipment[]>>("/qr-desk/eligible/")
+      .then((r) => setEquipment(r.data.data || []))
+      .catch(() => {
+        api.get<ApiResponse<Equipment[]>>("/equipment/?status=AVAILABLE").then((r) => setEquipment(r.data.data || []));
+      });
     api.get<ApiResponse<Operator[]>>("/operators/").then((r) => setOperators(r.data.data || []));
     api.get<ApiResponse<Site[]>>("/sites/").then((r) => setSites(r.data.data || []));
     loadOpen();
@@ -135,17 +140,24 @@ export default function QrDeskPage() {
         ApiResponse<{ rental_id: string; transaction_id?: string; qr_payload: string; asset_id?: string }>
       >("/qr-desk/generate/", {
         ...form,
-        daily_rate: Number(form.daily_rate),
+        daily_rate: Number(form.daily_rate) || 500,
       });
-      const data = res.data.data!;
+      const data = res.data.data;
+      if (!data?.rental_id && !data?.qr_payload) {
+        toast.error(res.data.message || "No QR payload returned");
+        return;
+      }
+      const payload = data.qr_payload || data.rental_id;
       setGenerated({
         rental_id: data.rental_id,
         transaction_id: data.transaction_id,
-        qr_payload: data.qr_payload || data.rental_id,
+        qr_payload: payload,
         asset_id: data.asset_id,
       });
       toast.success(`QR ready for ${data.rental_id}`);
       loadOpen();
+      // refresh eligible list
+      api.get<ApiResponse<Equipment[]>>("/qr-desk/eligible/").then((r) => setEquipment(r.data.data || []));
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
@@ -154,6 +166,17 @@ export default function QrDeskPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const showOpenQr = (r: OpenRental) => {
+    setTab("generate");
+    setGenerated({
+      rental_id: r.rental_id,
+      transaction_id: r.transaction_id,
+      qr_payload: r.qr_payload || r.rental_id,
+      asset_id: r.asset_id,
+    });
+    toast.message(`Showing QR for ${r.rental_id}`);
   };
 
   const runScan = async (code: string) => {
@@ -275,10 +298,12 @@ export default function QrDeskPage() {
                   onChange={(e) => setForm({ ...form, equipment_id: e.target.value })}
                   required
                 >
-                  <option value="">Select available asset</option>
+                  <option value="">
+                    {equipment.length ? "Select available asset" : "No free assets — show QR from open list below"}
+                  </option>
                   {equipment.map((e) => (
                     <option key={e.id} value={e.id}>
-                      {e.asset_id} — {e.model_name}
+                      {e.asset_id} — {e.model_name || e.category || e.current_status}
                     </option>
                   ))}
                 </Select>
@@ -360,9 +385,15 @@ export default function QrDeskPage() {
                   </Button>
                 </>
               ) : (
-                <div className="text-center text-[var(--muted)] space-y-2">
+                <div className="text-center text-[var(--muted)] space-y-3">
                   <QrCode className="h-12 w-12 mx-auto opacity-40" />
-                  <p>Generate a check-out QR to display it here.</p>
+                  <p>Generate a check-out QR, or click <strong>Show QR</strong> on an open pending rental below.</p>
+                  {equipment.length === 0 && (
+                    <p className="text-xs max-w-sm mx-auto">
+                      All yard assets are currently on active rentals. Use an open pending checkout QR, or check in a
+                      return to free an asset.
+                    </p>
+                  )}
                 </div>
               )}
             </SpotlightCard>
@@ -514,15 +545,7 @@ export default function QrDeskPage() {
                       <button
                         className="text-xs font-medium"
                         style={{ color: "var(--primary)" }}
-                        onClick={() => {
-                          setGenerated({
-                            rental_id: r.rental_id,
-                            transaction_id: r.transaction_id,
-                            qr_payload: r.qr_payload,
-                            asset_id: r.asset_id,
-                          });
-                          setTab("generate");
-                        }}
+                        onClick={() => showOpenQr(r)}
                       >
                         Show QR
                       </button>

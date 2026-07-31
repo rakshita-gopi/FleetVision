@@ -9,8 +9,8 @@ class AgentMessageSerializer(serializers.ModelSerializer):
 
 
 class ActionProposalSerializer(serializers.ModelSerializer):
-    asset_id = serializers.CharField(source="equipment.asset_id", read_only=True, default=None)
-    rental_id = serializers.CharField(source="rental.rental_id", read_only=True, default=None)
+    asset_id = serializers.SerializerMethodField()
+    rental_id = serializers.SerializerMethodField()
 
     class Meta:
         model = ActionProposal
@@ -28,6 +28,12 @@ class ActionProposalSerializer(serializers.ModelSerializer):
             "created_at",
             "reviewed_at",
         ]
+
+    def get_asset_id(self, obj):
+        return obj.equipment.asset_id if obj.equipment_id else None
+
+    def get_rental_id(self, obj):
+        return obj.rental.rental_id if obj.rental_id else None
 
 
 class AgentSessionSerializer(serializers.ModelSerializer):

@@ -61,6 +61,8 @@ if [ "${SEED_RENTAL:-true}" = "true" ]; then
   python manage.py seed_rental_dataset --telemetry-limit "${TELEMETRY_SEED_LIMIT:-500}" || true
   echo "Seeding site demand for forecasting..."
   python manage.py seed_site_demand || true
+  echo "Refreshing demo desk (sites, due/overdue returns, customers)..."
+  python manage.py refresh_demo_desk || true
 fi
 
 echo "Scanning rental due / overdue alerts..."
@@ -68,6 +70,12 @@ python manage.py scan_rental_alerts || true
 
 echo "Scanning asset misuse / idle / unassigned anomalies..."
 python manage.py scan_anomalies || true
+
+echo "Ensuring role demo users (admin/manager/operator/customer)..."
+python manage.py seed_role_users || true
+
+echo "Seeding customer rewards..."
+python manage.py seed_rewards || true
 
 echo "Collecting static files..."
 python manage.py collectstatic --noinput || true

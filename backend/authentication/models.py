@@ -6,7 +6,9 @@ from django.db import models
 class UserRole(models.TextChoices):
     ADMINISTRATOR = "Administrator", "Administrator"
     FLEET_MANAGER = "Fleet Manager", "Fleet Manager"
-    DRIVER = "Driver", "Driver"
+    OPERATOR = "Operator", "Operator"
+    CUSTOMER = "Customer", "Customer"
+    DRIVER = "Driver", "Driver"  # legacy alias
     MECHANIC = "Mechanic", "Mechanic"
 
 

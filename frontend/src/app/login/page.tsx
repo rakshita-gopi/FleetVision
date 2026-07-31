@@ -170,6 +170,27 @@ function AuthForm() {
                         <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
                       </div>
                     </div>
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--muted-bg)] p-3 space-y-1.5 text-[11px]">
+                      <p className="font-semibold text-[var(--foreground)]">Demo logins</p>
+                      {[
+                        ["admin@fleetvision.ai", "admin123", "Administrator"],
+                        ["manager@fleetvision.ai", "manager123", "Manager"],
+                        ["operator@fleetvision.ai", "operator123", "Operator"],
+                        ["customer@fleetvision.ai", "customer123", "Customer"],
+                      ].map(([em, pw, role]) => (
+                        <button
+                          key={em}
+                          type="button"
+                          className="w-full text-left hover:text-[var(--foreground)] text-[var(--muted)]"
+                          onClick={() => {
+                            setEmail(em);
+                            setPassword(pw);
+                          }}
+                        >
+                          {role}: {em} / {pw}
+                        </button>
+                      ))}
+                    </div>
                     <Button type="submit" className="w-full" size="lg" disabled={loading}>
                       {loading ? "Signing in..." : "Sign In"}
                       {!loading && <ArrowRight className="h-4 w-4" />}

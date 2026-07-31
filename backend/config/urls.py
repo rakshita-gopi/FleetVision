@@ -51,6 +51,7 @@ _api_patterns = [
     path("usage/", include("usage_logging.urls")),
     path("demand/", include("demand.urls")),
     path("anomalies/", include("anomalies.urls")),
+    path("rewards/", include("rewards.urls")),
 ]
 
 urlpatterns = [

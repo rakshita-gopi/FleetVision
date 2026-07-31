@@ -7,6 +7,7 @@ from uuid import UUID
 from django.db.models import Avg, Count, Max, Min, Q
 from django.utils import timezone
 
+from common.lookup import is_uuid
 from rentals.models import Rental, RentalStatus
 from telemetry.consumers.processor import get_live_state
 from telemetry.models import VehicleTelemetry
@@ -253,11 +254,12 @@ def list_usage_logs(*, status: str | None = None, q: str | None = None, limit: i
 
 
 def usage_detail(rental_id: str) -> dict[str, Any] | None:
-    rental = (
-        Rental.objects.select_related("equipment", "equipment__model_ref", "operator", "site")
-        .filter(Q(id=rental_id) | Q(rental_id__iexact=rental_id))
-        .first()
-    )
+    qs = Rental.objects.select_related("equipment", "equipment__model_ref", "operator", "site")
+    rental = None
+    if is_uuid(rental_id):
+        rental = qs.filter(id=rental_id).first()
+    if not rental:
+        rental = qs.filter(rental_id__iexact=str(rental_id)).first()
     if not rental:
         return None
 

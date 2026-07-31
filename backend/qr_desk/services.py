@@ -4,6 +4,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
+from common.lookup import get_by_uuid_or_code
 from equipment.models import Equipment, EquipmentStatus
 from operators.models import Operator
 from rentals.models import Rental, RentalStatus
@@ -110,6 +111,27 @@ def build_scan_payload(rental: Rental) -> dict:
     }
 
 
+def _close_stale_rentals_for_yard_asset(equipment: Equipment) -> int:
+    """
+    Seed/data repair: if equipment is AVAILABLE/IDLE in the yard but still has
+    ACTIVE/OVERDUE rentals, close those rentals so checkout QR can be issued.
+    """
+    if equipment.current_status not in (EquipmentStatus.AVAILABLE, EquipmentStatus.IDLE):
+        return 0
+    stale = Rental.objects.filter(
+        equipment=equipment,
+        rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
+    )
+    n = 0
+    for rental in stale:
+        rental.rental_status = RentalStatus.COMPLETED
+        rental.actual_return_date = date.today()
+        rental.qr_expired = True
+        rental.save()
+        n += 1
+    return n
+
+
 @transaction.atomic
 def generate_checkout_qr(
     *,
@@ -121,24 +143,54 @@ def generate_checkout_qr(
     expected_return_date: str | None = None,
     daily_rate: float = 500,
 ) -> Rental:
-    equipment = Equipment.objects.filter(Q(id=equipment_id) | Q(asset_id=equipment_id)).first()
+    equipment = get_by_uuid_or_code(Equipment, equipment_id, "asset_id")
     if not equipment:
         raise ValueError("Equipment not found")
     if equipment.current_status not in (EquipmentStatus.AVAILABLE, EquipmentStatus.IDLE):
-        raise ValueError("Equipment not available for checkout QR")
+        raise ValueError(
+            f"Equipment status is {equipment.current_status} — only AVAILABLE or IDLE can get a checkout QR"
+        )
 
-    # Block if already pending or active on this asset
-    busy = Rental.objects.filter(
-        equipment=equipment,
-        rental_status__in=[RentalStatus.PENDING_CHECKOUT, RentalStatus.ACTIVE, RentalStatus.OVERDUE],
-    ).exists()
-    if busy:
-        raise ValueError("Equipment already has an open rental")
+    _close_stale_rentals_for_yard_asset(equipment)
 
-    site = Site.objects.filter(Q(id=site_id) | Q(site_id=site_id)).first() if site_id else None
-    operator = (
-        Operator.objects.filter(Q(id=operator_id) | Q(operator_id=operator_id)).first() if operator_id else None
+    # Idempotent: reuse existing pending checkout QR for this asset
+    existing_pending = (
+        Rental.objects.filter(equipment=equipment, rental_status=RentalStatus.PENDING_CHECKOUT, qr_expired=False)
+        .order_by("-created_at")
+        .first()
     )
+    if existing_pending:
+        if customer_name:
+            existing_pending.customer_name = customer_name
+        if customer_id:
+            existing_pending.customer_id = customer_id
+        if daily_rate:
+            existing_pending.daily_rate = float(daily_rate)
+        if expected_return_date:
+            existing_pending.expected_return_date = date.fromisoformat(str(expected_return_date)[:10])
+        if site_id:
+            site = get_by_uuid_or_code(Site, site_id, "site_id")
+            if site:
+                existing_pending.site = site
+        if operator_id:
+            operator = get_by_uuid_or_code(Operator, operator_id, "operator_id")
+            if operator:
+                existing_pending.operator = operator
+        existing_pending.save()
+        return existing_pending
+
+    active = Rental.objects.filter(
+        equipment=equipment,
+        rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
+    ).first()
+    if active:
+        raise ValueError(
+            f"Equipment already on active rental {active.rental_id}. "
+            "Complete check-in first, or pick another asset."
+        )
+
+    site = get_by_uuid_or_code(Site, site_id, "site_id") if site_id else None
+    operator = get_by_uuid_or_code(Operator, operator_id, "operator_id") if operator_id else None
 
     expected = None
     if expected_return_date:

@@ -28,12 +28,12 @@ def _gather_rental_context():
         Equipment.objects.values("current_status").annotate(c=Count("id")).values_list("current_status", "c")
     )
     overdue = Rental.objects.filter(
-        rental_status=RentalStatus.ACTIVE,
+        rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
         expected_return_date__lt=today,
         actual_return_date__isnull=True,
     ).count()
     due_soon = Rental.objects.filter(
-        rental_status=RentalStatus.ACTIVE,
+        rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
         expected_return_date__gte=today,
         expected_return_date__lte=today + timedelta(days=3),
         actual_return_date__isnull=True,

@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "usage_logging",
     "demand",
     "anomalies",
+    "rewards",
 ]
 
 MIDDLEWARE = [

@@ -56,12 +56,12 @@ class EquipmentViewSet(viewsets.ReadOnlyModelViewSet):
         )
         today = timezone.now().date()
         overdue_qs = Rental.objects.filter(
-            rental_status=RentalStatus.ACTIVE,
+            rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
             expected_return_date__lt=today,
             actual_return_date__isnull=True,
         ).select_related("equipment", "site")
         due_soon_qs = Rental.objects.filter(
-            rental_status=RentalStatus.ACTIVE,
+            rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
             expected_return_date__gte=today,
             expected_return_date__lte=today + timedelta(days=7),
             actual_return_date__isnull=True,

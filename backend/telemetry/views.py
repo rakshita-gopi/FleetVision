@@ -86,14 +86,23 @@ class FleetLiveView(APIView):
         states = get_all_live_states()
         # Enrich with Rental-IQ asset codes when state UUID matches equipment
         from equipment.models import Equipment
+        from common.geo import snap_to_land
 
         ids = [s.get("vehicle_id") for s in states if s.get("vehicle_id")]
+        from common.lookup import is_uuid
+
+        uuid_ids = [vid for vid in ids if is_uuid(vid)]
         asset_map = {
-            str(e.id): e.asset_id for e in Equipment.objects.filter(id__in=ids).only("id", "asset_id")
+            str(e.id): e.asset_id for e in Equipment.objects.filter(id__in=uuid_ids).only("id", "asset_id")
         }
         for s in states:
             vid = str(s.get("vehicle_id") or "")
             if vid in asset_map:
                 s["asset_id"] = asset_map[vid]
                 s["equipment_id"] = vid
+            lat, lon = snap_to_land(s.get("latitude"), s.get("longitude"))
+            if lat is not None:
+                s["latitude"] = lat
+            if lon is not None:
+                s["longitude"] = lon
         return api_response(True, "Fleet live state", states)
