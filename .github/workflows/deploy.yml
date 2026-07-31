@@ -29,7 +29,17 @@ jobs:
 
             sudo docker compose up -d --build backend
 
-            curl -f http://localhost:8000/api/docs/ >/dev/null
+            echo "Waiting for API to become healthy..."
+            i=0
+            until curl -sf http://localhost:8000/api/v1/system/health/ >/dev/null; do
+              i=$((i + 1))
+              if [ "$i" -ge 40 ]; then
+                echo "API health check failed after waiting"
+                sudo docker compose logs --tail=80 backend || true
+                exit 1
+              fi
+              sleep 3
+            done
 
             sudo docker image prune -f
 
