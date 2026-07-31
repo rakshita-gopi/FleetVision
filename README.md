@@ -150,6 +150,12 @@ Ensure `frontend/.env.local` points at the Docker API:
 ```
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+
+# Vercel deploy (frontend/)
+# - NEXT_PUBLIC_API_URL=/api/v1  (same-origin proxy; do NOT bake trycloudflare into the client)
+# - BACKEND_API_URL=https://YOUR-TUNNEL.trycloudflare.com/api/v1
+# Keep cloudflared running: cloudflared tunnel --url http://127.0.0.1:8000
+# Update frontend/.env.production BACKEND_API_URL when the tunnel hostname changes, then redeploy.
 ```
 
 ```bash

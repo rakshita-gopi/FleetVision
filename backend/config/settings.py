@@ -123,13 +123,29 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
-# Localhost any port + raw IPs (EC2 public/private IP:3000) without reconfiguring each time
+# Localhost any port + raw IPs + Vercel preview/prod + Cloudflare quick tunnels
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://localhost:\d+$",
     r"^http://127\.0\.0\.1:\d+$",
     r"^http://\d{1,3}(\.\d{1,3}){3}(:\d+)?$",
+    r"^https://([a-z0-9-]+\.)*vercel\.app$",
+    r"^https://([a-z0-9-]+\.)*trycloudflare\.com$",
 ]
 CORS_ALLOW_CREDENTIALS = True
+# Allow Authorization header from browser apps
+CORS_ALLOW_HEADERS = list(
+    {
+        "accept",
+        "accept-encoding",
+        "authorization",
+        "content-type",
+        "dnt",
+        "origin",
+        "user-agent",
+        "x-csrftoken",
+        "x-requested-with",
+    }
+)
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [

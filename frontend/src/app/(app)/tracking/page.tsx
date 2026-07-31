@@ -23,8 +23,13 @@ const FleetMap = dynamic(() => import("@/components/tracking/fleet-map"), {
 const POLL_MS = 4000;
 
 function wsUrl(): string {
-  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-  const base = api.replace(/\/api\/v1\/?$/, "").replace(/^http/, "ws");
+  const configured = (process.env.NEXT_PUBLIC_API_URL || "").trim();
+  const wsApi = (process.env.NEXT_PUBLIC_WS_API_URL || "").trim();
+  const absolute =
+    (wsApi.startsWith("http") && wsApi) ||
+    (configured.startsWith("http") && !configured.includes("trycloudflare.com") && configured) ||
+    "http://localhost:8000/api/v1";
+  const base = absolute.replace(/\/api\/v1\/?$/, "").replace(/^http/, "ws");
   return `${base}/ws/fleet/`;
 }
 
