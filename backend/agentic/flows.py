@@ -49,8 +49,8 @@ FLOW_GRAPHS: dict[str, dict[str, Any]] = {
     },
     "dispatch": {
         "agent_id": "dispatch",
-        "default_prompt": "List overdue returns and propose dispatch follow-up check-ins.",
-        "default_workers": ["rental_state_worker", "telemetry_worker", "proposal_worker"],
+        "default_prompt": "Show Dispatch Hub details: pending QR checkouts, active possessions, overdue and due returns, and assets ready for a new check-out QR.",
+        "default_workers": ["rental_state_worker", "proposal_worker"],
         "nodes": [
             _n("user", "userNode", 30, 40, "Yard desk", "Checkout / return intent"),
             _n("qr", "toolsNode", 30, 220, "QR / possession", "Dispatch Hub tools"),

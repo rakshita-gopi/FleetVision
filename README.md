@@ -2,7 +2,8 @@
 
 Smart equipment rental intelligence — Django REST + Next.js. Slice A: light yellow UI, equipment/rentals/sites from the CAT dataset, check-in/out, live map, Agentic Mode with human approval.
 
-See **[docs/rental-iq-mvp.md](docs/rental-iq-mvp.md)** for run commands and APIs.
+See **[docs/rental-iq-mvp.md](docs/rental-iq-mvp.md)** for run commands and APIs.  
+See **[docs/mcp.md](docs/mcp.md)** for the Model Context Protocol (MCP) layer (stdio + HTTP tools).
 
 ---
 

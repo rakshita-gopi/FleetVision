@@ -56,12 +56,118 @@ def list_overdue_rentals(limit: int = 20) -> list[dict]:
             "asset_id": r.equipment.asset_id,
             "site_id": r.site.site_id if r.site else None,
             "operator_id": r.operator.operator_id if r.operator else None,
+            "operator_name": r.operator.name if r.operator else None,
             "customer_name": r.customer_name or "",
             "expected_return_date": str(r.expected_return_date),
             "days_overdue": (today - r.expected_return_date).days if r.expected_return_date else 0,
         }
         for r in qs
     ]
+
+
+def dispatch_desk_summary(*, limit: int = 12) -> dict[str, Any]:
+    """Yard desk snapshot: pending QR checkouts, open possessions, returns, eligible assets."""
+    today = date.today()
+    open_qs = (
+        Rental.objects.select_related("equipment", "site", "operator")
+        .filter(actual_return_date__isnull=True)
+        .exclude(rental_status=RentalStatus.CANCELLED)
+    )
+
+    pending = list(
+        open_qs.filter(rental_status=RentalStatus.PENDING_CHECKOUT).order_by("-created_at")[:limit]
+    )
+    active = list(
+        open_qs.filter(rental_status=RentalStatus.ACTIVE)
+        .filter(Q(expected_return_date__isnull=True) | Q(expected_return_date__gte=today))
+        .order_by("expected_return_date", "-created_at")[:limit]
+    )
+    overdue = list(
+        open_qs.filter(
+            rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
+            expected_return_date__lt=today,
+        ).order_by("expected_return_date")[:limit]
+    )
+    due_today = list(
+        open_qs.filter(
+            rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
+            expected_return_date=today,
+        ).order_by("rental_id")[:limit]
+    )
+    due_soon = list(
+        open_qs.filter(
+            rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
+            expected_return_date__gt=today,
+            expected_return_date__lte=today + timedelta(days=3),
+        ).order_by("expected_return_date")[:limit]
+    )
+
+    active_eq_ids = set(
+        open_qs.filter(rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE]).values_list(
+            "equipment_id", flat=True
+        )
+    )
+    eligible = list(
+        Equipment.objects.select_related("model_ref", "current_site")
+        .filter(current_status__in=[EquipmentStatus.AVAILABLE, EquipmentStatus.IDLE])
+        .exclude(id__in=active_eq_ids)
+        .order_by("asset_id")[:limit]
+    )
+
+    def _row(r: Rental) -> dict:
+        return {
+            "rental_id": r.rental_id,
+            "transaction_id": r.transaction_id or "",
+            "asset_id": r.equipment.asset_id if r.equipment_id else "",
+            "status": r.rental_status,
+            "site_id": r.site.site_id if r.site else None,
+            "site_name": r.site.site_name if r.site else None,
+            "operator_id": r.operator.operator_id if r.operator else None,
+            "operator_name": r.operator.name if r.operator else None,
+            "customer_name": r.customer_name or "",
+            "customer_id": r.customer_id or "",
+            "daily_rate": r.daily_rate,
+            "check_out_date": str(r.check_out_date) if r.check_out_date else None,
+            "expected_return_date": str(r.expected_return_date) if r.expected_return_date else None,
+            "qr_payload": r.rental_id,
+        }
+
+    return {
+        "as_of": today.isoformat(),
+        "counts": {
+            "pending_checkout": open_qs.filter(rental_status=RentalStatus.PENDING_CHECKOUT).count(),
+            "active_on_rent": open_qs.filter(rental_status=RentalStatus.ACTIVE).count(),
+            "overdue": open_qs.filter(
+                rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
+                expected_return_date__lt=today,
+            ).count(),
+            "due_today": open_qs.filter(
+                rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
+                expected_return_date=today,
+            ).count(),
+            "due_soon_3d": open_qs.filter(
+                rental_status__in=[RentalStatus.ACTIVE, RentalStatus.OVERDUE],
+                expected_return_date__gt=today,
+                expected_return_date__lte=today + timedelta(days=3),
+            ).count(),
+            "eligible_for_qr": len(eligible),
+        },
+        "pending_checkouts": [_row(r) for r in pending],
+        "active_possessions": [_row(r) for r in active],
+        "overdue_returns": [_row(r) for r in overdue],
+        "due_today": [_row(r) for r in due_today],
+        "due_soon": [_row(r) for r in due_soon],
+        "eligible_assets": [
+            {
+                "asset_id": e.asset_id,
+                "status": e.current_status,
+                "model": e.model_ref.model if e.model_ref else "",
+                "category": e.model_ref.category if e.model_ref else "",
+                "site_id": e.current_site.site_id if e.current_site else None,
+            }
+            for e in eligible
+        ],
+    }
 
 
 def utilisation_summary() -> dict[str, Any]:

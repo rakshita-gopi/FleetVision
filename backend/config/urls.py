@@ -15,6 +15,7 @@ def api_root(_request):
             "docs": "/api/docs/",
             "schema": "/api/schema/",
             "health": "/api/v1/system/health/",
+            "mcp": "/api/v1/mcp/tools/",
             "admin": "/admin/",
         }
     )
@@ -52,6 +53,7 @@ _api_patterns = [
     path("demand/", include("demand.urls")),
     path("anomalies/", include("anomalies.urls")),
     path("rewards/", include("rewards.urls")),
+    path("mcp/", include("mcp_layer.urls")),
 ]
 
 urlpatterns = [

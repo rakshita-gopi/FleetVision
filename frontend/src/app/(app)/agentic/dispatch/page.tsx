@@ -7,7 +7,7 @@ export default function AgenticDispatchPage() {
     <AgenticCanvas
       domain="dispatch"
       title="Dispatch Hub Agent"
-      subtitle="Checkout / check-in automation · overdue returns · possession"
+      subtitle="Pending QR · active possessions · overdue / due returns · eligible assets"
     />
   );
 }

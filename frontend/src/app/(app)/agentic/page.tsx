@@ -37,6 +37,13 @@ import { toast } from "sonner";
 interface Catalog {
   agents: { id: string; name: string; role: string; domain: string; color: string; capabilities: string[] }[];
   workers: { id: string; name: string; kind: string }[];
+  mcp?: {
+    protocol: string;
+    server: string;
+    stdio_command: string;
+    http?: { tools: string; call: string };
+    tools: { name: string; description: string }[];
+  };
 }
 
 const AGENT_LINKS = [
@@ -190,6 +197,35 @@ export default function AgenticDashboardPage() {
             })}
           </div>
         </div>
+
+        {catalog?.mcp && (
+          <SpotlightCard className="p-4" spotlightColor="rgba(37, 99, 235, 0.08)">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+              <div>
+                <h3 className="font-semibold">MCP tool layer</h3>
+                <p className="text-xs text-[var(--muted)] mt-1">
+                  {catalog.mcp.server} · {catalog.mcp.tools?.length ?? 0} tools · stdio +{" "}
+                  {catalog.mcp.http?.tools || "/api/v1/mcp/tools/"}
+                </p>
+              </div>
+              <Badge status="ACTIVE" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(catalog.mcp.tools || []).map((t) => (
+                <span
+                  key={t.name}
+                  className="text-[11px] rounded-lg bg-[var(--muted-bg)] px-2.5 py-1 font-mono"
+                  title={t.description}
+                >
+                  {t.name}
+                </span>
+              ))}
+            </div>
+            <p className="text-[10px] text-[var(--muted)] mt-3 font-mono">
+              {catalog.mcp.stdio_command}
+            </p>
+          </SpotlightCard>
+        )}
 
         <SpotlightCard className="p-4" spotlightColor="rgba(13, 148, 136, 0.1)">
           <div className="flex items-center justify-between mb-3">

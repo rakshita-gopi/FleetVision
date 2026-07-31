@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "demand",
     "anomalies",
     "rewards",
+    "mcp_layer",
 ]
 
 MIDDLEWARE = [

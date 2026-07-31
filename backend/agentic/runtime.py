@@ -16,6 +16,7 @@ from anomalies.services import detect_anomalies
 from demand.services import build_forecast
 from notifications.services import scan_rental_due_alerts
 from .services import (
+    dispatch_desk_summary,
     list_overdue_rentals,
     propose_action,
     run_agent_chat,
@@ -135,15 +136,17 @@ WORKERS: list[dict[str, Any]] = [
         "name": "Rental State Worker",
         "kind": "executor",
         "description": "Applies approved return / extend / reallocate mutations.",
-        "tools": ["execute_proposal", "list_overdue_rentals"],
+        "tools": ["execute_proposal", "list_overdue_rentals", "dispatch_desk_summary"],
     },
 ]
 
 
 def catalog(domain: str | None = None) -> dict:
+    from mcp_layer.tools_registry import mcp_catalog_block
+
     data = {
         "protocol": "ag-ui-inspired",
-        "version": "1.2",
+        "version": "1.3",
         "agents": enrich_agents(AGENTS),
         "workers": enrich_workers(WORKERS),
         "domains": [
@@ -153,6 +156,7 @@ def catalog(domain: str | None = None) -> dict:
             {"id": "anomalies", "label": "Anomaly Desk", "href": "/agentic/anomalies"},
             {"id": "alerts", "label": "Alerts & Notifications", "href": "/agentic/alerts"},
         ],
+        "mcp": mcp_catalog_block(),
     }
     if domain:
         data["flow"] = flow_for_domain(domain)
@@ -289,8 +293,8 @@ def run_agui_turn(
             lambda: build_forecast(horizon_days=horizon, lookback_days=lookback),
         )
     elif target == "dispatch":
+        use_worker("rental_state_worker", "dispatch_desk_summary", dispatch_desk_summary)
         use_worker("rental_state_worker", "list_overdue_rentals", list_overdue_rentals)
-        use_worker("telemetry_worker", "utilisation_summary", utilisation_summary)
     elif target in ("utilisation", "maintenance", "orchestrator"):
         use_worker("telemetry_worker", "utilisation_summary", utilisation_summary)
         status = "IDLE"
@@ -406,8 +410,14 @@ def _summary(result: Any) -> str:
     if result is None:
         return "No result"
     if isinstance(result, dict):
-        if "emitted" in result:
-            return "Notifications queued" if result.get("emitted") else "Notifications skipped"
+        if result.get("counts") and (
+            "pending_checkout" in result["counts"] or "eligible_for_qr" in result["counts"]
+        ):
+            c = result["counts"]
+            return (
+                f"pending {c.get('pending_checkout', 0)} · active {c.get('active_on_rent', 0)} · "
+                f"overdue {c.get('overdue', 0)} · eligible QR {c.get('eligible_for_qr', 0)}"
+            )
         if result.get("total") is not None and "counts" in result:
             counts = result.get("counts") or {}
             parts = [f"{k.replace('_', ' ')} {v}" for k, v in counts.items()]
@@ -559,27 +569,81 @@ def build_run_report(agent_id: str, tool_results: dict[str, Any]) -> str:
         return "\n".join(lines)
 
     if agent_id == "dispatch":
-        overdue = tool_results.get("list_overdue_rentals") or []
-        util = tool_results.get("utilisation_summary") or {}
-        lines: list[str] = []
-        if isinstance(overdue, list) and overdue:
-            lines.append(f"Dispatch desk: {len(overdue)} overdue rental(s) need check-in follow-up.")
-            for o in overdue[:8]:
-                who = o.get("customer_name") or o.get("site_id") or "yard"
-                lines.append(
-                    f"• {o.get('rental_id')} ({o.get('asset_id')}) — "
-                    f"{o.get('days_overdue')} day(s) overdue · {who}"
-                )
-        else:
-            lines.append("No overdue rentals in this window — check due-soon and active contracts next.")
-        if util:
+        desk = tool_results.get("dispatch_desk_summary") or {}
+        counts = desk.get("counts") or {}
+        pending = desk.get("pending_checkouts") or []
+        active = desk.get("active_possessions") or []
+        overdue = desk.get("overdue_returns") or tool_results.get("list_overdue_rentals") or []
+        due_today = desk.get("due_today") or []
+        due_soon = desk.get("due_soon") or []
+        eligible = desk.get("eligible_assets") or []
+
+        lines = [
+            "Dispatch Hub details",
+            (
+                f"Pending QR checkouts: {counts.get('pending_checkout', len(pending))} · "
+                f"Active on rent: {counts.get('active_on_rent', len(active))} · "
+                f"Overdue returns: {counts.get('overdue', len(overdue))} · "
+                f"Due today: {counts.get('due_today', len(due_today))} · "
+                f"Due in 3d: {counts.get('due_soon_3d', len(due_soon))} · "
+                f"Eligible for new QR: {counts.get('eligible_for_qr', len(eligible))}."
+            ),
+        ]
+
+        def _fmt(r: dict) -> str:
+            asset = r.get("asset_id") or "—"
+            rid = r.get("rental_id") or "—"
+            site = r.get("site_id") or "no site"
+            op = r.get("operator_name") or r.get("operator_id") or "unassigned"
+            cust = r.get("customer_name") or r.get("customer_id") or "—"
+            due = r.get("expected_return_date") or "no due date"
+            rate = r.get("daily_rate")
+            rate_s = f" · ₹{int(rate)}/day" if rate not in (None, "") else ""
+            return f"• {rid} · {asset} · {site} · op {op} · {cust} · due {due}{rate_s}"
+
+        if pending:
             lines.append("")
-            lines.append(
-                f"Fleet snapshot: {util.get('utilisation_pct')}% utilisation "
-                f"({util.get('active_count', 0)} active, "
-                f"{util.get('available_count', 0)} available, "
-                f"{util.get('idle_count', 0)} idle)."
-            )
+            lines.append("Pending check-out QR (awaiting operator scan):")
+            for r in pending[:8]:
+                lines.append(_fmt(r) + f" · QR `{r.get('qr_payload') or r.get('rental_id')}`")
+        else:
+            lines.append("")
+            lines.append("Pending check-out QR: none open right now.")
+
+        if overdue:
+            lines.append("")
+            lines.append("Overdue — arrange check-in:")
+            for r in overdue[:8]:
+                extra = ""
+                if r.get("days_overdue") is not None:
+                    extra = f" · {r.get('days_overdue')}d late"
+                lines.append(_fmt(r) + extra)
+        if due_today:
+            lines.append("")
+            lines.append("Due today:")
+            for r in due_today[:6]:
+                lines.append(_fmt(r))
+        if due_soon:
+            lines.append("")
+            lines.append("Due within 3 days:")
+            for r in due_soon[:6]:
+                lines.append(_fmt(r))
+        if active:
+            lines.append("")
+            lines.append("Active possessions (sample):")
+            for r in active[:6]:
+                lines.append(_fmt(r))
+        if eligible:
+            lines.append("")
+            lines.append("Ready for new check-out QR:")
+            for e in eligible[:8]:
+                lines.append(
+                    f"• {e.get('asset_id')} — {e.get('model') or e.get('category') or 'asset'} "
+                    f"({e.get('status')}) · {e.get('site_id') or 'yard'}"
+                )
+
+        lines.append("")
+        lines.append("Next steps: generate QR in Dispatch Hub, operator scan to activate, then check in on return.")
         return "\n".join(lines)
 
     util = tool_results.get("utilisation_summary") or {}
